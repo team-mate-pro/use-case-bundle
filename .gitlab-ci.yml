@@ -1,0 +1,35 @@
+image: docker:20.10
+
+services:
+  - docker:20.10-dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  FF_NETWORK_PER_BUILD: 1
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+stages:
+  - test
+  - deploy
+
+tests-unit:
+  stage: test
+  script:
+    - docker compose -f docker-compose.gitlab.yml run --rm lib tests:unit
+
+deploy_production:
+  stage: deploy
+  only:
+    - tags
+  script:
+    - |
+      apk add --no-cache curl git
+      TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+
+      curl --header "PRIVATE-TOKEN: $TOKEN" \
+           --data "tag=$TAG" \
+           --data "tag=dev-master" \
+           "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/packages/composer"

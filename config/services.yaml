@@ -1,0 +1,32 @@
+services:
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+  TeamMatePro\UseCaseBundle\:
+    resource: '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/'
+    exclude:
+      - '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/Repository/'
+      - '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/UseCase/'
+
+  TeamMatePro\UseCaseBundle\Http\RequestDependencies:
+    arguments:
+      $security: '@Symfony\Bundle\SecurityBundle\Security'
+      $serializer: '@serializer'
+
+  TeamMatePro\UseCaseBundle\Utils\PartialUpdateService:
+
+  TeamMatePro\UseCaseBundle\Http\AbstractValidatedRequest:
+    arguments:
+      $deps: 'TeamMatePro\UseCaseBundle\Http\RequestDependencies'
+
+  TeamMatePro\UseCaseBundle\Http\EventListener\ValidationExceptionListener:
+    tags:
+      - { name: kernel.event_listener, event: kernel.exception, method: onKernelException }
+
+  TeamMatePro\UseCaseBundle\Http\EventListener\AuthorizationExceptionListener:
+    tags:
+      - { name: kernel.event_listener, event: kernel.exception, method: onKernelException }
+
+  TeamMatePro\UseCaseBundle\Http\ResponseAsBlobCsvInterface:
+    class: TeamMatePro\UseCaseBundle\Http\ResultResponseFactory

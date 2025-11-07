@@ -1,0 +1,379 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Call to an undefined method Symfony\\Component\\Serializer\\SerializerInterface\:\:denormalize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Cannot call method getId\(\) on Symfony\\Component\\Security\\Core\\User\\UserInterface\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Cannot call method getName\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Cannot call method isBuiltin\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:__call\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:__call\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:__get\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:getHeader\(\) should return string\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:getMimeType\(\) should return string\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Parameter \#1 \$object_or_class of function method_exists expects object\|string, ReflectionType\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Property TeamMatePro\\UseCaseBundle\\Http\\AbstractValidatedRequest\:\:\$headers type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/AbstractValidatedRequest.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\Exception\\HttpMalformedRequestException\:\:__construct\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/Exception/HttpMalformedRequestException.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\ResponseAsBlobCsvInterface\:\:createCsvResponse\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/ResponseAsBlobCsvInterface.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\ResponseAsBlobCsvInterface\:\:createCsvResponse\(\) has parameter \$serializationGroups with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/ResponseAsBlobCsvInterface.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\ResponseAsBlobInterface\:\:createBlobResponse\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/ResponseAsBlobInterface.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\AbstractRestApiController\:\:response\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/RestApi/AbstractRestApiController.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\AbstractRestApiController\:\:response\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/RestApi/AbstractRestApiController.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\AbstractRestApiController\:\:response\(\) has parameter \$serializationGroups with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/RestApi/AbstractRestApiController.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\AbstractRestApiController\:\:responseWithCache\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/RestApi/AbstractRestApiController.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\AbstractRestApiController\:\:responseWithCache\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/RestApi/AbstractRestApiController.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\ResultRestRenderer\:\:render\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/RestApi/ResultRestRenderer.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\ResultRestRenderer\:\:render\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/RestApi/ResultRestRenderer.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\RestApi\\ResultRestRenderer\:\:renderMandatory\(\) should return array\{message\: string\|null, code\: int, errorCode\: string\|null\} but returns non\-empty\-array\<string, mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/RestApi/ResultRestRenderer.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\ResultResponseFactory\:\:createCsvResponse\(\) has parameter \$result with generic class TeamMatePro\\Contracts\\Collection\\Result but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Http/ResultResponseFactory.php
+
+		-
+			message: '#^Method TeamMatePro\\UseCaseBundle\\Http\\ResultResponseFactory\:\:createCsvResponse\(\) has parameter \$serializationGroups with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Http/ResultResponseFactory.php
+
+		-
+			message: '#^Parameter \#1 \$groups of method Symfony\\Component\\Serializer\\Context\\Normalizer\\AbstractNormalizerContextBuilder\:\:withGroups\(\) expects list\<string\>\|string\|null, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/ResultResponseFactory.php
+
+		-
+			message: '#^Parameter \$content of class Symfony\\Component\\HttpFoundation\\Response constructor expects string\|null, string\|Stringable given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/ResultResponseFactory.php
+
+		-
+			message: '#^Trait TeamMatePro\\UseCaseBundle\\Http\\UseSerializerTrait is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Http/UseSerializerTrait.php
+
+		-
+			message: '#^Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition\:\:children\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/TeamMateProUseCaseBundle.php
+
+		-
+			message: '#^Cannot call method defaultValue\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/TeamMateProUseCaseBundle.php
+
+		-
+			message: '#^Cannot call method end\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: src/TeamMateProUseCaseBundle.php
+
+		-
+			message: '#^Cannot call method node\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/TeamMateProUseCaseBundle.php
+
+		-
+			message: '#^Cannot access offset ''code'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''message'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot call method getContent\(\) on Symfony\\Component\\HttpFoundation\\Response\|null\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot call method getStatusCode\(\) on Symfony\\Component\\HttpFoundation\\Response\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#1 \$json of function json_decode expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 4
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#2 \$array of method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\) expects array\|ArrayAccess, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Http/EventListener/AuthorizationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''code'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''errors'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 5
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''message'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''property'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 5
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset ''value'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 5
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset 1 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot access offset 2 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Cannot call method getContent\(\) on Symfony\\Component\\HttpFoundation\\Response\|null\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#1 \$json of function json_decode expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 5
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#2 \$array of method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\) expects array\|ArrayAccess, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects Countable\|iterable, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: tests/Unit/Http/EventListener/ValidationExceptionListenerTest.php
+
+		-
+			message: '#^Parameter \#2 \$array of method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\) expects array\|ArrayAccess, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Http/RestApi/ResultRestRendererTest.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: tests/Unit/Http/ResultResponseFactoryTest.php
+
+		-
+			message: '#^Cannot access property \$email on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Unit/Repository/CollectionTest.php
+
+		-
+			message: '#^Cannot access property \$id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Unit/Repository/CollectionTest.php
+
+		-
+			message: '#^Cannot access property \$name on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Unit/Repository/CollectionTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''TeamMatePro\\\\Contracts\\\\Collection\\\\Pagination'' and TeamMatePro\\Contracts\\Collection\\Pagination will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/Repository/PaginationTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''TeamMatePro\\\\Contracts\\\\Collection\\\\Result'' and TeamMatePro\\Contracts\\Collection\\Result will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/UseCase/ResultTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Traversable'' and Traversable will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/UseCase/ResultTest.php
+
+		-
+			message: '#^Cannot access offset ''level2'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: tests/Unit/UseCase/ResultTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Stringable'' and TeamMatePro\\UseCaseBundle\\Utils\\StringAbleObject will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/Utils/StringAbleObjectTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''DateTimeInterface'' and DateTimeInterface will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 6
+			path: tests/Unit/ValueObject/TimeRangeTest.php

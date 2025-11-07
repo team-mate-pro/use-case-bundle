@@ -1,0 +1,16 @@
+services:
+  lib:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: lib
+    volumes:
+        - .:/app
+
+  bash:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bash
+    volumes:
+        - .:/app
