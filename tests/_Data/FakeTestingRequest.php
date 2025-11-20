@@ -23,4 +23,29 @@ final class FakeTestingRequest extends AbstractValidatedRequest
     {
         return $this->getValue($property);
     }
+
+    public function getValueReturningNullable(string $property): string|null
+    {
+        return $this->getValue($property);
+    }
+
+    public function getValueReturningUndefinable(string $property): Undefined|string
+    {
+        return $this->getValue($property);
+    }
+
+    public function getValueReturningString(string $property): string
+    {
+        return $this->getValue($property);
+    }
+
+    public function getValueWithNoReturnType(string $property)
+    {
+        return $this->getValue($property);
+    }
+
+    public function getValueReturningNullableOrUndefined(string $property): Undefined|string|null
+    {
+        return $this->getValue($property);
+    }
 }

@@ -56,7 +56,7 @@ final class AbstractValidatedRequestTest extends TestCase
         $sut->getValuePublic('nonExistentProperty');
     }
 
-    public function testGetValueThrowsExceptionWhenPropertyIsNull(): void
+    public function testGetValueThrowsExceptionWhenPropertyIsNullAndCallerDoesNotAllowNull(): void
     {
         $sut = new FakeTestingRequest(new FakeDependencies());
         $sut->nullableProperty = null;
@@ -64,10 +64,10 @@ final class AbstractValidatedRequestTest extends TestCase
         $this->expectException(HttpMalformedRequestException::class);
         $this->expectExceptionMessage('Property "nullableProperty" is null');
 
-        $sut->getValuePublic('nullableProperty');
+        $sut->getValueReturningString('nullableProperty');
     }
 
-    public function testGetValueThrowsExceptionWhenPropertyIsUndefined(): void
+    public function testGetValueThrowsExceptionWhenPropertyIsUndefinedAndCallerDoesNotAllowUndefined(): void
     {
         $sut = new FakeTestingRequest(new FakeDependencies());
         // The undefinedProperty should be automatically set to Undefined in populate()
@@ -75,21 +75,7 @@ final class AbstractValidatedRequestTest extends TestCase
         $this->expectException(HttpMalformedRequestException::class);
         $this->expectExceptionMessage('Property "undefinedProperty" is undefined');
 
-        $sut->getValuePublic('undefinedProperty');
-    }
-
-    public function testGetValueThrowsExceptionWhenPropertyIsNotSet(): void
-    {
-        $sut = new FakeTestingRequest(new FakeDependencies());
-
-        // To test !isset we need a property that is unset
-        // Since all properties are initialized, we'll use the undefined property
-        // which gets auto-set to Undefined and will fail the Undefined check first
-        // Let's test the isset check by using a property that exists but might be unset
-
-        $this->expectException(HttpMalformedRequestException::class);
-
-        $sut->getValuePublic('undefinedProperty');
+        $sut->getValueReturningString('undefinedProperty');
     }
 
     public function testGetValueReturnsValueWhenPropertyIsValidString(): void
@@ -123,5 +109,98 @@ final class AbstractValidatedRequestTest extends TestCase
             $this->assertStringContainsString('invalidProp', $e->getMessage());
             $this->assertStringContainsString('does not exist', $e->getMessage());
         }
+    }
+
+    public function testGetValueReturnsNullWhenPropertyAndCallerAllowNull(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        $sut->nullableProperty = null;
+
+        $result = $sut->getValueReturningNullable('nullableProperty');
+
+        $this->assertNull($result);
+    }
+
+    public function testGetValueReturnsUndefinedWhenPropertyAndCallerAllowUndefined(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        // undefinedProperty is automatically set to Undefined in populate()
+
+        $result = $sut->getValueReturningUndefinable('undefinedProperty');
+
+        $this->assertInstanceOf(Undefined::class, $result);
+    }
+
+    public function testGetValueReturnsNullWhenCallerHasMixedReturnType(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        $sut->nullableProperty = null;
+
+        $result = $sut->getValuePublic('nullableProperty');
+
+        $this->assertNull($result);
+    }
+
+    public function testGetValueReturnsUndefinedWhenCallerHasMixedReturnType(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+
+        $result = $sut->getValuePublic('undefinedProperty');
+
+        $this->assertInstanceOf(Undefined::class, $result);
+    }
+
+    public function testGetValueReturnsNullWhenCallerHasNoReturnType(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        $sut->nullableProperty = null;
+
+        $result = $sut->getValueWithNoReturnType('nullableProperty');
+
+        $this->assertNull($result);
+    }
+
+    public function testGetValueReturnsUndefinedWhenCallerHasNoReturnType(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+
+        $result = $sut->getValueWithNoReturnType('undefinedProperty');
+
+        $this->assertInstanceOf(Undefined::class, $result);
+    }
+
+    public function testGetValueReturnsNullOrUndefinedWhenCallerAllowsBoth(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        $sut->nullableProperty = null;
+
+        $resultNull = $sut->getValueReturningNullableOrUndefined('nullableProperty');
+        $this->assertNull($resultNull);
+
+        $resultUndefined = $sut->getValueReturningNullableOrUndefined('undefinedProperty');
+        $this->assertInstanceOf(Undefined::class, $resultUndefined);
+    }
+
+    public function testGetValueThrowsExceptionWhenPropertyAllowsNullButCallerDoesNot(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+        $sut->nullableProperty = null;
+
+        $this->expectException(HttpMalformedRequestException::class);
+        $this->expectExceptionMessage('Property "nullableProperty" is null');
+
+        // getValueReturningString has return type string (no null)
+        $sut->getValueReturningString('nullableProperty');
+    }
+
+    public function testGetValueThrowsExceptionWhenPropertyAllowsUndefinedButCallerDoesNot(): void
+    {
+        $sut = new FakeTestingRequest(new FakeDependencies());
+
+        $this->expectException(HttpMalformedRequestException::class);
+        $this->expectExceptionMessage('Property "undefinedProperty" is undefined');
+
+        // getValueReturningNullable has return type string|null (no Undefined)
+        $sut->getValueReturningNullable('undefinedProperty');
     }
 }

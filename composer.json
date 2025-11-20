@@ -1,10 +1,10 @@
 {
     "name": "team-mate-pro/use-case-bundle",
     "description": "A building block for layered architecture with Symfony framework.",
-  "version": "2.0.2",
+  "version": "2.0.3",
     "type": "symfony-bundle",
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "symfony/framework-bundle": ">=7.0",
         "symfony/validator": ">=7.0",
         "symfony/security-bundle": ">=7.0",

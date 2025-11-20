@@ -2,5 +2,5 @@ services:
   lib:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/app/Dockerfile
       target: lib

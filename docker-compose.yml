@@ -1,16 +1,12 @@
 services:
-  lib:
+  app:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: lib
+      dockerfile: docker/app/Dockerfile
+    container_name: ssa-core-bundle-app
     volumes:
-        - .:/app
-
-  bash:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: bash
-    volumes:
-        - .:/app
+      - .:/app
+      - ./vendor:/app/vendor
+    working_dir: /app
+    tty: true
+    stdin_open: true

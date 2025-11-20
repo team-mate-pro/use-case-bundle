@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace TeamMatePro\UseCaseBundle\Http;
 
 use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionUnionType;
 use RuntimeException;
 use TeamMatePro\Contracts\Dto\Undefined;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -181,19 +185,97 @@ abstract class AbstractValidatedRequest
 
         $value = $this->{$property};
 
+        // Get property type information
+        $reflection = new ReflectionClass($this);
+        $reflectionProperty = $reflection->getProperty($property);
+        $propertyType = $reflectionProperty->getType();
+
+        // Check if property type allows null or Undefined
+        $propertyAllowsNull = false;
+        $propertyAllowsUndefined = false;
+
+        if ($propertyType instanceof ReflectionUnionType) {
+            foreach ($propertyType->getTypes() as $type) {
+                if ($type instanceof ReflectionNamedType) {
+                    if ($type->getName() === 'null') {
+                        $propertyAllowsNull = true;
+                    }
+                    if ($type->getName() === Undefined::class) {
+                        $propertyAllowsUndefined = true;
+                    }
+                }
+            }
+        } elseif ($propertyType instanceof ReflectionNamedType) {
+            $propertyAllowsNull = $propertyType->allowsNull();
+            if ($propertyType->getName() === Undefined::class) {
+                $propertyAllowsUndefined = true;
+            }
+        }
+
+        // Get caller method information
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $caller = $backtrace[1] ?? null;
+
+        $callerAllowsNull = false;
+        $callerAllowsUndefined = false;
+
+        if ($caller && isset($caller['class'])) {
+            try {
+                $callerReflection = new ReflectionMethod($caller['class'], $caller['function']);
+                $returnType = $callerReflection->getReturnType();
+
+                if ($returnType instanceof ReflectionUnionType) {
+                    foreach ($returnType->getTypes() as $type) {
+                        if ($type instanceof ReflectionNamedType) {
+                            if ($type->getName() === 'null') {
+                                $callerAllowsNull = true;
+                            }
+                            if ($type->getName() === Undefined::class) {
+                                $callerAllowsUndefined = true;
+                            }
+                        }
+                    }
+                } elseif ($returnType instanceof ReflectionNamedType) {
+                    $callerAllowsNull = $returnType->allowsNull();
+                    if ($returnType->getName() === Undefined::class) {
+                        $callerAllowsUndefined = true;
+                    }
+                    // Handle mixed return type
+                    if ($returnType->getName() === 'mixed') {
+                        $callerAllowsNull = true;
+                        $callerAllowsUndefined = true;
+                    }
+                } elseif ($returnType === null) {
+                    // No return type means mixed, which allows everything
+                    $callerAllowsNull = true;
+                    $callerAllowsUndefined = true;
+                }
+            } catch (ReflectionException $e) {
+                // If we can't reflect the caller, assume it doesn't allow null/undefined
+            }
+        } else {
+            // No caller information, assume mixed (allows everything)
+            $callerAllowsNull = true;
+            $callerAllowsUndefined = true;
+        }
+
         // Check if value is null
         if ($value === null) {
+            if ($propertyAllowsNull && $callerAllowsNull) {
+                return null;
+            }
             throw new HttpMalformedRequestException(message: sprintf('Property "%s" is null', $property));
         }
 
         // Check if value is Undefined
         if ($value instanceof Undefined) {
+            if ($propertyAllowsUndefined && $callerAllowsUndefined) {
+                return $value;
+            }
             throw new HttpMalformedRequestException(message: sprintf('Property "%s" is undefined', $property));
         }
 
         // Check if value is not set (isset returns false for null and uninitialized properties)
-        // This check is now redundant since we already checked for null and Undefined above
-        // but we keep it for uninitialized typed properties
         if (!isset($this->{$property})) {
             throw new HttpMalformedRequestException(message: sprintf('Property "%s" is not set', $property));
         }
