@@ -24,6 +24,100 @@ use TeamMatePro\UseCaseBundle\Http\Exception\HttpMalformedRequestException;
 use function sprintf;
 
 /**
+ * Abstract base class for validated HTTP requests in SSA Core Bundle.
+ *
+ * This class provides automatic request data population, validation, security checks,
+ * and intelligent type casting for getter methods.
+ *
+ * ## Key Features:
+ *
+ * ### 1. Auto-population
+ * Request data (JSON body, query params, route attributes) is automatically populated
+ * into public properties. Properties with Undefined type hints are initialized with
+ * Undefined instances if not present in the request.
+ *
+ * ### 2. Security Check
+ * Override securityCheck() to implement authorization logic. Throws AccessDeniedException
+ * if security check fails (returns false).
+ *
+ * ### 3. Auto-validation
+ * Symfony validator constraints are automatically executed on construction unless
+ * autoValidateRequest() returns false.
+ *
+ * ### 4. User ID Injection
+ * If the request has a 'userId' property and a user is authenticated, it's auto-populated
+ * with the authenticated user's ID.
+ *
+ * ### 5. getValue() Helper with Type Casting
+ * The protected getValue() method provides comprehensive validation and automatic type casting:
+ *
+ * - Checks if property exists, is set, and is not null/Undefined (unless caller allows it)
+ * - Automatically casts values to match the caller method's return type signature
+ * - Supports casting between simple types: string, int, float, bool
+ *
+ * #### Type Casting Examples:
+ * ```php
+ * // Property: public string|int|null $age;
+ * $this->age = 25; // int value
+ *
+ * // Getter with string return type automatically casts int to string
+ * public function getAge(): string
+ * {
+ *     return $this->getValue('age'); // Returns "25" (string)
+ * }
+ *
+ * // Property: public string|bool|null $enabled;
+ * $this->enabled = "true";
+ *
+ * // Getter with bool return type automatically casts string to bool
+ * public function isEnabled(): bool
+ * {
+ *     return $this->getValue('enabled'); // Returns true (bool)
+ * }
+ * ```
+ *
+ * #### Casting Rules:
+ * - **To string**: int, float, bool (true→"1", false→"0")
+ * - **To int**: numeric string, float (truncates), bool (true→1, false→0)
+ * - **To float**: numeric string, int
+ * - **To bool**: string ("1","true","yes","on"→true), int (0→false, other→true), float (0.0→false, other→true)
+ *
+ * ### 6. Populate Strategies
+ * Two strategies available (override getPopulateStrategy()):
+ * - PROPERTY_SET_STRATEGY (default): Direct property assignment
+ * - SERIALIZER_STRATEGY: Uses Symfony serializer for complex denormalization
+ *
+ * ## Usage Example:
+ * ```php
+ * class CreateUserRequest extends AbstractValidatedRequest
+ * {
+ *     #[Assert\NotBlank]
+ *     #[Assert\Email]
+ *     public string $email;
+ *
+ *     #[Assert\NotBlank]
+ *     public string|int $age;
+ *
+ *     public string|null $userId = null;
+ *
+ *     protected function securityCheck(): bool
+ *     {
+ *         return $this->isGranted('ROLE_USER');
+ *     }
+ *
+ *     public function getEmail(): string
+ *     {
+ *         return $this->getValue('email');
+ *     }
+ *
+ *     // Automatically casts int to string if needed
+ *     public function getAge(): string
+ *     {
+ *         return $this->getValue('age');
+ *     }
+ * }
+ * ```
+ *
  * @method string|null getUserId()
  * @method bool isGranted(mixed $attributes, mixed $subject = null)
  * @property-read Security $security
@@ -280,6 +374,145 @@ abstract class AbstractValidatedRequest
             throw new HttpMalformedRequestException(message: sprintf('Property "%s" is not set', $property));
         }
 
+        // Attempt type casting if caller has specific type requirements
+        if ($caller && isset($caller['class'])) {
+            try {
+                $callerReflection = new ReflectionMethod($caller['class'], $caller['function']);
+                $returnType = $callerReflection->getReturnType();
+
+                if ($returnType instanceof ReflectionNamedType || $returnType instanceof ReflectionUnionType) {
+                    $value = $this->castValueToCallerType($value, $returnType);
+                }
+            } catch (ReflectionException $e) {
+                // If we can't reflect the caller, return value as-is
+            }
+        }
+
         return $value;
+    }
+
+    /**
+     * Cast value to match caller's expected type
+     */
+    private function castValueToCallerType(mixed $value, ReflectionNamedType|ReflectionUnionType $returnType): mixed
+    {
+        $expectedTypes = $this->extractExpectedTypes($returnType);
+        $currentType = $this->getValueType($value);
+
+        // If current type is already in expected types, no casting needed
+        if (in_array($currentType, $expectedTypes, true)) {
+            return $value;
+        }
+
+        // Try to cast to the first compatible expected type
+        foreach ($expectedTypes as $expectedType) {
+            $casted = $this->tryCastValue($value, $currentType, $expectedType);
+            if ($casted !== null) {
+                return $casted;
+            }
+        }
+
+        // If no casting was successful, return original value
+        return $value;
+    }
+
+    /**
+     * Extract expected type names from return type
+     * @return array<string>
+     */
+    private function extractExpectedTypes(ReflectionNamedType|ReflectionUnionType $returnType): array
+    {
+        $types = [];
+
+        if ($returnType instanceof ReflectionUnionType) {
+            foreach ($returnType->getTypes() as $type) {
+                if ($type instanceof ReflectionNamedType) {
+                    $typeName = $type->getName();
+                    if ($typeName !== 'null' && $typeName !== Undefined::class) {
+                        $types[] = $typeName;
+                    }
+                }
+            }
+        } elseif ($returnType instanceof ReflectionNamedType) {
+            $typeName = $returnType->getName();
+            if ($typeName !== 'mixed' && $typeName !== 'null' && $typeName !== Undefined::class) {
+                $types[] = $typeName;
+            }
+        }
+
+        return $types;
+    }
+
+    /**
+     * Get the type of a value as a string
+     */
+    private function getValueType(mixed $value): string
+    {
+        if (is_object($value)) {
+            return get_class($value);
+        }
+
+        return gettype($value) === 'double' ? 'float' : gettype($value);
+    }
+
+    /**
+     * Try to cast a value from one type to another
+     * Returns null if casting is not possible or makes no sense
+     */
+    private function tryCastValue(mixed $value, string $fromType, string $toType): mixed
+    {
+        // Same type, no casting needed
+        if ($fromType === $toType) {
+            return $value;
+        }
+
+        // Casting to string
+        if ($toType === 'string') {
+            if ($fromType === 'integer' || $fromType === 'float') {
+                return is_int($value) || is_float($value) ? (string)$value : null;
+            }
+            if ($fromType === 'boolean' && is_bool($value)) {
+                return $value ? '1' : '0';
+            }
+        }
+
+        // Casting to int
+        if ($toType === 'int' || $toType === 'integer') {
+            if ($fromType === 'string' && is_string($value) && is_numeric($value)) {
+                return (int)$value;
+            }
+            if ($fromType === 'float' && is_float($value)) {
+                return (int)$value;
+            }
+            if ($fromType === 'boolean' && is_bool($value)) {
+                return $value ? 1 : 0;
+            }
+        }
+
+        // Casting to float
+        if ($toType === 'float') {
+            if ($fromType === 'string' && is_string($value) && is_numeric($value)) {
+                return (float)$value;
+            }
+            if ($fromType === 'integer' && is_int($value)) {
+                return (float)$value;
+            }
+        }
+
+        // Casting to bool
+        if ($toType === 'bool' || $toType === 'boolean') {
+            if ($fromType === 'string' && is_string($value)) {
+                return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
+            }
+            if ($fromType === 'integer' && is_int($value)) {
+                return $value !== 0;
+            }
+            if ($fromType === 'float' && is_float($value)) {
+                return $value !== 0.0;
+            }
+        }
+
+        // No valid casting found
+        return null;
     }
 }
