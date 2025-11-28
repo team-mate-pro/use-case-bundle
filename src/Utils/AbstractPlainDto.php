@@ -9,6 +9,7 @@ use JsonSerializable;
 use ReflectionClass;
 use ReflectionMethod;
 use Stringable;
+use TeamMatePro\Contracts\Dto\Undefined;
 
 abstract class AbstractPlainDto implements JsonSerializable
 {
@@ -29,6 +30,11 @@ abstract class AbstractPlainDto implements JsonSerializable
             }
 
             $value = $property->getValue($this);
+
+            if ($value instanceof Undefined) {
+                continue;
+            }
+
             $result[$name] = $this->normalizeValue($value);
         }
 
@@ -51,6 +57,12 @@ abstract class AbstractPlainDto implements JsonSerializable
 
             $key = $this->extractKeyFromMethodName($methodName);
             $value = $method->invoke($this);
+
+            if ($value instanceof Undefined) {
+                unset($result[$key]);
+                continue;
+            }
+
             $result[$key] = $this->normalizeValue($value);
         }
 

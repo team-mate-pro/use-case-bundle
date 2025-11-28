@@ -8,6 +8,7 @@ use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stringable;
+use TeamMatePro\Contracts\Dto\Undefined;
 use TeamMatePro\UseCaseBundle\Utils\AbstractPlainDto;
 
 #[CoversClass(AbstractPlainDto::class)]
@@ -522,6 +523,116 @@ final class AbstractPlainDtoTest extends TestCase
         $result = $dto->jsonSerialize();
 
         $this->assertSame(['name' => 'default'], $result);
+    }
+
+    public function testSkipsUndefinedPropertyValues(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string $name = 'John';
+            public string|Undefined $email;
+
+            public function __construct()
+            {
+                $this->email = new Undefined();
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['name' => 'John'], $result);
+        $this->assertArrayNotHasKey('email', $result);
+    }
+
+    public function testSkipsUndefinedMethodReturnValues(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function getName(): string
+            {
+                return 'John';
+            }
+
+            /** @phpstan-ignore return.unusedType */
+            public function getEmail(): string|Undefined
+            {
+                return new Undefined();
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['name' => 'John'], $result);
+        $this->assertArrayNotHasKey('email', $result);
+    }
+
+    public function testSkipsUndefinedInMixedScenario(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string $propertySet = 'value';
+            public string|Undefined $propertyUndefined;
+
+            public function __construct()
+            {
+                $this->propertyUndefined = new Undefined();
+            }
+
+            public function getMethodSet(): string
+            {
+                return 'method value';
+            }
+
+            /** @phpstan-ignore return.unusedType */
+            public function getMethodUndefined(): string|Undefined
+            {
+                return new Undefined();
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame([
+            'propertySet' => 'value',
+            'methodSet' => 'method value',
+        ], $result);
+        $this->assertArrayNotHasKey('propertyUndefined', $result);
+        $this->assertArrayNotHasKey('methodUndefined', $result);
+    }
+
+    public function testMethodOverridesPropertyWithUndefined(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string $title = 'from property';
+
+            /** @phpstan-ignore return.unusedType */
+            public function getTitle(): string|Undefined
+            {
+                return new Undefined();
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertArrayNotHasKey('title', $result);
+    }
+
+    public function testMethodOverridesUndefinedPropertyWithValue(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string|Undefined $title;
+
+            public function __construct()
+            {
+                $this->title = new Undefined();
+            }
+
+            public function getTitle(): string
+            {
+                return 'from method';
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['title' => 'from method'], $result);
     }
 }
 
