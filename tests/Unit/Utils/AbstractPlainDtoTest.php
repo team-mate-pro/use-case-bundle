@@ -25,14 +25,84 @@ final class AbstractPlainDtoTest extends TestCase
         $this->assertSame(['name' => 'John', 'age' => 30], $result);
     }
 
-    public function testIgnoresPrivateAndProtectedProperties(): void
+    public function testSerializesPublicMethods(): void
     {
-        $dto = new class ('visible') extends AbstractPlainDto {
-            protected string $protected = 'hidden';
+        $dto = new class extends AbstractPlainDto {
+            public function getName(): string
+            {
+                return 'John';
+            }
 
-            public function __construct(
-                public string $public,
-            ) {
+            public function getAge(): int
+            {
+                return 30;
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['name' => 'John', 'age' => 30], $result);
+    }
+
+    public function testMethodTakesPrecedenceOverProperty(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string $title = 'from property';
+
+            public function getTitle(): string
+            {
+                return 'from method';
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['title' => 'from method'], $result);
+    }
+
+    public function testPropertiesAndMethodsCombined(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public string $propertyOnly = 'property value';
+            public string $overridden = 'will be overridden';
+
+            public function getOverridden(): string
+            {
+                return 'method wins';
+            }
+
+            public function getMethodOnly(): string
+            {
+                return 'method value';
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame([
+            'propertyOnly' => 'property value',
+            'overridden' => 'method wins',
+            'methodOnly' => 'method value',
+        ], $result);
+    }
+
+    public function testIgnoresPrivateAndProtectedMethods(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function getPublic(): string
+            {
+                return 'visible';
+            }
+
+            protected function getProtected(): string
+            {
+                return 'hidden';
+            }
+
+            /** @phpstan-ignore method.unused */
+            private function getPrivate(): string
+            {
+                return 'hidden';
             }
         };
 
@@ -41,15 +111,17 @@ final class AbstractPlainDtoTest extends TestCase
         $this->assertSame(['public' => 'visible'], $result);
     }
 
-    public function testIgnoresUninitializedProperties(): void
+    public function testIgnoresMethodsWithRequiredParameters(): void
     {
-        $dto = new class ('value') extends AbstractPlainDto {
-            /** @phpstan-ignore-next-line */
-            public string $uninitialized;
+        $dto = new class extends AbstractPlainDto {
+            public function getInitialized(): string
+            {
+                return 'value';
+            }
 
-            public function __construct(
-                public string $initialized,
-            ) {
+            public function getWithParam(string $param): string
+            {
+                return $param;
             }
         };
 
@@ -60,10 +132,10 @@ final class AbstractPlainDtoTest extends TestCase
 
     public function testSerializesStringBackedEnum(): void
     {
-        $dto = new class (StringBackedTestEnum::ACTIVE) extends AbstractPlainDto {
-            public function __construct(
-                public StringBackedTestEnum $status,
-            ) {
+        $dto = new class extends AbstractPlainDto {
+            public function getStatus(): StringBackedTestEnum
+            {
+                return StringBackedTestEnum::ACTIVE;
             }
         };
 
@@ -74,10 +146,10 @@ final class AbstractPlainDtoTest extends TestCase
 
     public function testSerializesIntBackedEnum(): void
     {
-        $dto = new class (IntBackedTestEnum::HIGH) extends AbstractPlainDto {
-            public function __construct(
-                public IntBackedTestEnum $priority,
-            ) {
+        $dto = new class extends AbstractPlainDto {
+            public function getPriority(): IntBackedTestEnum
+            {
+                return IntBackedTestEnum::HIGH;
             }
         };
 
@@ -97,8 +169,13 @@ final class AbstractPlainDtoTest extends TestCase
 
         $dto = new class ($stringable) extends AbstractPlainDto {
             public function __construct(
-                public Stringable $content,
+                private Stringable $stringable,
             ) {
+            }
+
+            public function getContent(): Stringable
+            {
+                return $this->stringable;
             }
         };
 
@@ -121,8 +198,13 @@ final class AbstractPlainDtoTest extends TestCase
 
         $dto = new class ($jsonSerializable) extends AbstractPlainDto {
             public function __construct(
-                public JsonSerializable $data,
+                private JsonSerializable $jsonSerializable,
             ) {
+            }
+
+            public function getData(): JsonSerializable
+            {
+                return $this->jsonSerializable;
             }
         };
 
@@ -134,13 +216,21 @@ final class AbstractPlainDtoTest extends TestCase
     public function testSerializesNestedDto(): void
     {
         $innerDto = new class extends AbstractPlainDto {
-            public string $inner = 'value';
+            public function getInner(): string
+            {
+                return 'value';
+            }
         };
 
         $dto = new class ($innerDto) extends AbstractPlainDto {
             public function __construct(
-                public AbstractPlainDto $nested,
+                private AbstractPlainDto $innerDto,
             ) {
+            }
+
+            public function getNested(): AbstractPlainDto
+            {
+                return $this->innerDto;
             }
         };
 
@@ -152,8 +242,13 @@ final class AbstractPlainDtoTest extends TestCase
     public function testSerializesArrayOfPrimitives(): void
     {
         $dto = new class extends AbstractPlainDto {
-            /** @var string[] */
-            public array $tags = ['php', 'symfony'];
+            /**
+             * @return string[]
+             */
+            public function getTags(): array
+            {
+                return ['php', 'symfony'];
+            }
         };
 
         $result = $dto->jsonSerialize();
@@ -163,13 +258,13 @@ final class AbstractPlainDtoTest extends TestCase
 
     public function testSerializesArrayOfEnums(): void
     {
-        $dto = new class ([StringBackedTestEnum::ACTIVE, StringBackedTestEnum::INACTIVE]) extends AbstractPlainDto {
+        $dto = new class extends AbstractPlainDto {
             /**
-             * @param StringBackedTestEnum[] $statuses
+             * @return StringBackedTestEnum[]
              */
-            public function __construct(
-                public array $statuses,
-            ) {
+            public function getStatuses(): array
+            {
+                return [StringBackedTestEnum::ACTIVE, StringBackedTestEnum::INACTIVE];
             }
         };
 
@@ -204,8 +299,16 @@ final class AbstractPlainDtoTest extends TestCase
              * @param JsonSerializable[] $items
              */
             public function __construct(
-                public array $items,
+                private array $items,
             ) {
+            }
+
+            /**
+             * @return JsonSerializable[]
+             */
+            public function getItems(): array
+            {
+                return $this->items;
             }
         };
 
@@ -214,10 +317,14 @@ final class AbstractPlainDtoTest extends TestCase
         $this->assertSame(['items' => [['id' => 1], ['id' => 2]]], $result);
     }
 
-    public function testSerializesNullablePropertyWithValue(): void
+    public function testSerializesNullableMethodWithValue(): void
     {
         $dto = new class extends AbstractPlainDto {
-            public ?string $nullable = 'has value';
+            /** @phpstan-ignore return.unusedType */
+            public function getNullable(): ?string
+            {
+                return 'has value';
+            }
         };
 
         $result = $dto->jsonSerialize();
@@ -225,10 +332,14 @@ final class AbstractPlainDtoTest extends TestCase
         $this->assertSame(['nullable' => 'has value'], $result);
     }
 
-    public function testSerializesNullablePropertyWithNull(): void
+    public function testSerializesNullableMethodWithNull(): void
     {
         $dto = new class extends AbstractPlainDto {
-            public ?string $nullable = null;
+            /** @phpstan-ignore return.unusedType */
+            public function getNullable(): ?string
+            {
+                return null;
+            }
         };
 
         $result = $dto->jsonSerialize();
@@ -239,7 +350,10 @@ final class AbstractPlainDtoTest extends TestCase
     public function testSerializesComplexDto(): void
     {
         $innerDto = new class extends AbstractPlainDto {
-            public string $name = 'inner';
+            public function getName(): string
+            {
+                return 'inner';
+            }
         };
 
         $dto = new class ('Test', 5, StringBackedTestEnum::ACTIVE, $innerDto, ['a', 'b']) extends AbstractPlainDto {
@@ -247,12 +361,40 @@ final class AbstractPlainDtoTest extends TestCase
              * @param string[] $tags
              */
             public function __construct(
-                public string $title,
-                public int $count,
-                public StringBackedTestEnum $status,
-                public AbstractPlainDto $child,
-                public array $tags,
+                private string $title,
+                private int $count,
+                private StringBackedTestEnum $status,
+                private AbstractPlainDto $child,
+                private array $tags,
             ) {
+            }
+
+            public function getTitle(): string
+            {
+                return $this->title;
+            }
+
+            public function getCount(): int
+            {
+                return $this->count;
+            }
+
+            public function getStatus(): StringBackedTestEnum
+            {
+                return $this->status;
+            }
+
+            public function getChild(): AbstractPlainDto
+            {
+                return $this->child;
+            }
+
+            /**
+             * @return string[]
+             */
+            public function getTags(): array
+            {
+                return $this->tags;
             }
         };
 
@@ -270,8 +412,15 @@ final class AbstractPlainDtoTest extends TestCase
     public function testJsonEncodeProducesValidJson(): void
     {
         $dto = new class extends AbstractPlainDto {
-            public string $name = 'Test';
-            public int $value = 42;
+            public function getName(): string
+            {
+                return 'Test';
+            }
+
+            public function getValue(): int
+            {
+                return 42;
+            }
         };
 
         $json = json_encode($dto);
@@ -289,17 +438,90 @@ final class AbstractPlainDtoTest extends TestCase
         $this->assertSame([], $result);
     }
 
-    public function testPreservesCamelCasePropertyNames(): void
+    public function testPreservesCamelCaseMethodNames(): void
     {
         $dto = new class extends AbstractPlainDto {
-            public string $someField = 'value';
-            public string $anotherLongFieldName = 'another';
+            public function getSomeField(): string
+            {
+                return 'value';
+            }
+
+            public function getAnotherLongFieldName(): string
+            {
+                return 'another';
+            }
         };
 
         $result = $dto->jsonSerialize();
 
         $this->assertArrayHasKey('someField', $result);
         $this->assertArrayHasKey('anotherLongFieldName', $result);
+    }
+
+    public function testMethodsWithoutGetPrefixUseMethodNameAsKey(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function title(): string
+            {
+                return 'my title';
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['title' => 'my title'], $result);
+    }
+
+    public function testIsMethodPrefixIsStripped(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function isActive(): bool
+            {
+                return true;
+            }
+
+            public function isEnabled(): bool
+            {
+                return false;
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['active' => true, 'enabled' => false], $result);
+    }
+
+    public function testHasMethodPrefixIsStripped(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function hasItems(): bool
+            {
+                return true;
+            }
+
+            public function hasPermission(): bool
+            {
+                return false;
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['items' => true, 'permission' => false], $result);
+    }
+
+    public function testMethodsWithOptionalParametersAreIncluded(): void
+    {
+        $dto = new class extends AbstractPlainDto {
+            public function getName(string $default = 'default'): string
+            {
+                return $default;
+            }
+        };
+
+        $result = $dto->jsonSerialize();
+
+        $this->assertSame(['name' => 'default'], $result);
     }
 }
 
