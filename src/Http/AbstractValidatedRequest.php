@@ -32,9 +32,9 @@ use function sprintf;
  * ## Key Features:
  *
  * ### 1. Auto-population
- * Request data (JSON body, query params, route attributes) is automatically populated
- * into public properties. Properties with Undefined type hints are initialized with
- * Undefined instances if not present in the request.
+ * Request data (JSON body, query params, route attributes, multipart form data) is automatically
+ * populated into public properties. Properties with Undefined type hints are initialized with
+ * Undefined instances if not present in the request. File uploads are supported via 'files' or 'file' keys.
  *
  * ### 2. Security Check
  * Override securityCheck() to implement authorization logic. Throws AccessDeniedException
@@ -174,9 +174,17 @@ abstract class AbstractValidatedRequest
         } catch (JsonException $e) {
         }
 
-        $data = array_merge($currentRequest->attributes->all(), $jsonBody, $currentRequest->query->all());
+        // Merge all data sources: route attributes, JSON body, query params, and form data (multipart)
+        $data = array_merge(
+            $currentRequest->attributes->all(),
+            $jsonBody,
+            $currentRequest->query->all(),
+            $currentRequest->request->all() // POST form data (multipart/form-data fields)
+        );
 
-        if ($files = $currentRequest->files->all('file')) {
+        // Handle file uploads - check both 'file' and 'files' keys for flexibility
+        $files = $currentRequest->files->all('files') ?: $currentRequest->files->all('file');
+        if ($files) {
             $data = array_merge($data, ['files' => $files]);
         }
 
