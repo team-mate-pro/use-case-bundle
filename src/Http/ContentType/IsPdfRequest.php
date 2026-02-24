@@ -2,7 +2,7 @@
 
 namespace TeamMatePro\UseCaseBundle\Http\ContentType;
 
-interface isPdfRequest
+interface IsPdfRequest
 {
     public function isPdfRequest(HeadersAwareInterface $request): bool;
 }

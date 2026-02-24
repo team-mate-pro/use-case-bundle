@@ -2,7 +2,7 @@
 
 namespace TeamMatePro\UseCaseBundle\Http\ContentType;
 
-interface isCsvRequest
+interface IsCsvRequest
 {
     public function isCsvRequest(HeadersAwareInterface $request): bool;
 }

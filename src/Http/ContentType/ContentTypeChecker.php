@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TeamMatePro\UseCaseBundle\Http\ContentType;
 
-final class ContentTypeChecker implements isCsvRequest, isPdfRequest
+final class ContentTypeChecker implements IsCsvRequest, IsPdfRequest
 {
     private const CSV_MIME_TYPES = [
         'text/csv',
