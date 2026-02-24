@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
+use TeamMatePro\UseCaseBundle\Http\ContentType\HeadersAwareInterface;
 use function array_merge;
 use function get_class;
 use function method_exists;
@@ -122,7 +123,7 @@ use function sprintf;
  * @method bool isGranted(mixed $attributes, mixed $subject = null)
  * @property-read Security $security
  */
-abstract class AbstractValidatedRequest
+abstract class AbstractValidatedRequest implements HeadersAwareInterface
 {
     public const PROPERTY_SET_STRATEGY = 'property';
     public const SERIALIZER_STRATEGY = 'serializer';

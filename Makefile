@@ -18,21 +18,21 @@ help: ### Display available targets and their descriptions
 ## --- General ---
 
 # General git commands
-include vendor/team-mate-pro/make/git/MAKE_GIT_v1
+-include vendor/team-mate-pro/make/git/MAKE_GIT_v1
 
 # Docker
-include vendor/team-mate-pro/make/docker/MAKE_DOCKER_v1
+-include vendor/team-mate-pro/make/docker/MAKE_DOCKER_v1
 
 # Claude Code
-include vendor/team-mate-pro/make/claude/MAKE_CLAUDE_v1
+-include vendor/team-mate-pro/make/claude/MAKE_CLAUDE_v1
 
 # --- Backend ---
 
 # PHPUNIT
-include vendor/team-mate-pro/make/phpunit/MAKE_PHPUNIT_v1
+-include vendor/team-mate-pro/make/phpunit/MAKE_PHPUNIT_v1
 
 # PHPSTAN
-include vendor/team-mate-pro/make/phpstan/MAKE_PHPSTAN_v1
+-include vendor/team-mate-pro/make/phpstan/MAKE_PHPSTAN_v1
 
 ## --- Mandatory aliases ---
 

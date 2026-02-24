@@ -219,6 +219,52 @@ $response = ResultResponseFactory::createBlobResponse(
 );
 ```
 
+### Content Type Checker
+
+Check if a request expects a specific content type based on the `Accept` header:
+
+```php
+use TeamMatePro\UseCaseBundle\Http\ContentType\ContentTypeChecker;
+
+class ExportController extends AbstractRestApiController
+{
+    public function __construct(
+        private readonly ContentTypeChecker $contentTypeChecker,
+        private readonly ExportUseCase $useCase
+    ) {}
+
+    #[Route('/api/users/export', methods: ['GET'])]
+    public function __invoke(ExportRequest $request): Response
+    {
+        $result = $this->useCase->execute($request);
+
+        // Check Accept header to determine response format
+        if ($this->contentTypeChecker->isCsvRequest($request)) {
+            return ResultResponseFactory::createCsvResponse($result, 'users.csv');
+        }
+
+        if ($this->contentTypeChecker->isPdfRequest($request)) {
+            return ResultResponseFactory::createBlobResponse(
+                result: $result,
+                contentType: 'application/pdf',
+                filename: 'users.pdf'
+            );
+        }
+
+        // Default JSON response
+        return $this->response($result, ['user:read']);
+    }
+}
+```
+
+The `ContentTypeChecker` supports:
+- **CSV detection**: `text/csv`, `application/csv`, `text/comma-separated-values`
+- **PDF detection**: `application/pdf`
+- Case-insensitive matching
+- Multiple MIME types in Accept header (e.g., `text/csv, application/json`)
+
+Any class implementing `HeadersAwareInterface` can be checked (including `AbstractValidatedRequest`).
+
 ## Development
 
 This bundle uses Docker for development. All commands run inside containers to ensure consistency.
