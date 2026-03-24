@@ -18,7 +18,9 @@
         "phpstan/phpstan-phpunit": "*",
         "phpstan/phpstan-symfony": "*",
         "phpstan/extension-installer": "*",
-        "team-mate-pro/make": "^1.0"
+        "squizlabs/php_codesniffer": "^3.10",
+        "team-mate-pro/make": "^1.0",
+        "team-mate-pro/tmp-standards": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -41,8 +43,8 @@
         "tests:unit": "@phpunit",
         "phpstan": "php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G --generate-baseline",
-        "phpcs:check": "php vendor/bin/phpcs",
-        "phpcs:fix": "php vendor/bin/phpcbf"
+        "phpcs": "php vendor/bin/phpcs --standard=phpcs.xml --exclude=Generic.Files.LineLength",
+        "phpcs:fix": "php vendor/bin/phpcbf --standard=phpcs.xml --exclude=Generic.Files.LineLength"
     },
     "config": {
         "allow-plugins": {

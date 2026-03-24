@@ -16,7 +16,6 @@ final class FakeSecurityService extends Security
     {
         parent::__construct(
             new class implements ContainerInterface {
-
                 public function get(string $id)
                 {
                 }

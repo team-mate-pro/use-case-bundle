@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd">
+
+    <arg name="basepath" value="."/>
+    <arg name="cache" value=".phpcs-cache"/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+
+    <!-- Include PSR12 coding standards -->
+    <rule ref="PSR12"/>
+
+    <!-- Enforce strict types declaration -->
+    <rule ref="Generic.PHP.RequireStrictTypes">
+        <severity>5</severity>
+    </rule>
+
+    <!-- Exclude file ending newline check -->
+    <exclude name="PSR12.Files.EndFileNewline"/>
+    <exclude name="Generic.Files.LineEndings"/>
+
+    <!-- Allow multiple classes/enums in test files for test fixtures -->
+    <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
+    <!-- Define the directories to scan -->
+    <file>src/</file>
+    <file>tests/</file>
+
+</ruleset>

@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use TeamMatePro\Contracts\Collection\PaginatedCollection;
 use TeamMatePro\Contracts\Collection\Result;
 use TeamMatePro\Contracts\Collection\ResultType;
+
 use function get_class;
 use function is_array;
 use function is_object;

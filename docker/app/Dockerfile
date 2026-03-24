@@ -1,10 +1,6 @@
-FROM php:8.3-cli-alpine
+FROM php:8.3-cli-alpine AS base
 
-# Install system dependencies and PHP extensions
-RUN apk add --no-cache \
-    git \
-    unzip \
-    bash \
+RUN apk --update add --no-cache \
     libpng \
     libzip \
     icu \
@@ -16,17 +12,31 @@ RUN apk add --no-cache \
     && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Bash and Composer
+RUN apk --update add --no-cache bash git \
+    && wget -O /usr/local/bin/composer https://getcomposer.org/composer-stable.phar \
+    && chmod +x /usr/local/bin/composer
 
 RUN git config --global --add safe.directory /app
 
-# Set working directory
+FROM base AS bash
+
 WORKDIR /app
 
-# Configure PHP
-RUN echo "memory_limit = 256M" > /usr/local/etc/php/conf.d/memory-limit.ini
+COPY . .
 
-# Keep container running
-CMD ["tail", "-f", "/dev/null"]
+# Install Composer dependencies, including dev dependencies for testing
+RUN composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
 
+# Add vendor/bin to PATH
+ENV PATH="/app/vendor/bin:${PATH}"
+
+ENTRYPOINT ["bash"]
+
+FROM bash AS lib
+
+COPY --from=bash /app /app
+
+ENTRYPOINT ["composer"]
+
+FROM lib AS static_analysis

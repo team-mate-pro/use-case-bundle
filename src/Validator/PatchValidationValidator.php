@@ -9,6 +9,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use TeamMatePro\Contracts\Dto\Undefined;
+
 use function array_filter;
 use function assert;
 
@@ -41,8 +42,8 @@ final class PatchValidationValidator extends ConstraintValidator
         assert($constraint instanceof PatchValidation);
 
         $hasNotBlank = count(
-                array_filter($constraint->constraints, fn($constraint) => $constraint instanceof NotBlank)
-            ) > 0;
+            array_filter($constraint->constraints, fn($constraint) => $constraint instanceof NotBlank)
+        ) > 0;
 
         // Skip validation if value is Undefined and no NotBlank constraint
         if ($value instanceof Undefined && $hasNotBlank === false) {

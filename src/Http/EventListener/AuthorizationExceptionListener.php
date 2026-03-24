@@ -26,7 +26,8 @@ final class AuthorizationExceptionListener
                 ResultRestRenderer::renderMandatory(
                     message: $exception->getMessage(),
                     code: $exception->getCode(),
-                ), $exception->getCode()
+                ),
+                $exception->getCode()
             );
 
             $event->setResponse($response);

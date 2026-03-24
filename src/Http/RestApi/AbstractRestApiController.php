@@ -7,6 +7,7 @@ namespace TeamMatePro\UseCaseBundle\Http\RestApi;
 use TeamMatePro\Contracts\Collection\Result;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+
 use function array_merge;
 use function is_string;
 use function sprintf;
@@ -16,9 +17,8 @@ abstract class AbstractRestApiController extends AbstractController
     public function response(
         Result $result,
         array|string|null $serializationGroups = null,
-        array  $headers = []
-    ): JsonResponse
-    {
+        array $headers = []
+    ): JsonResponse {
         $context = is_string(
             $serializationGroups
         ) ? ['groups' => [$serializationGroups]] : ['groups' => $serializationGroups];
@@ -36,12 +36,11 @@ abstract class AbstractRestApiController extends AbstractController
      * @param int[]|int|null $cacheInSeconds - if array passed, second param will cache in the browser
      */
     public function responseWithCache(
-        Result         $result,
+        Result $result,
         int|array|null $cacheInSeconds = 3600,
         array|string|null $serializationGroups = null,
-        array          $headers = []
-    ): JsonResponse
-    {
+        array $headers = []
+    ): JsonResponse {
         $sMaxAge = 0;
         $maxAge = 0;
 
@@ -58,5 +57,4 @@ abstract class AbstractRestApiController extends AbstractController
 
         return $this->response($result, $serializationGroups, array_merge($cacheHeader, $headers));
     }
-
 }
