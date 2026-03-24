@@ -10,6 +10,18 @@ objects, and consistent HTTP responses.
 
 Documentation available at: https://serek.dev/super-simple-architecture-by-serek-ssa
 
+## Architecture Standards (UCB Rules)
+
+This bundle follows TMP Standards (Use Case Bundle rules). Key conventions:
+
+| Standard | Rule |
+|----------|------|
+| **UCB-001** | UseCase parameters MUST be interfaces, not concrete classes |
+| **UCB-002** | UseCase MUST have `__invoke()` method (not `execute()`) |
+| **UCB-003** | Authorization MUST be in Request's `securityCheck()`, NOT in UseCase |
+| **UCB-004** | Controller MUST use `$this->response()`, NOT `$this->json()` |
+| **UCB-005** | Controller actions MUST have "Action" suffix (e.g., `createUserAction`) |
+
 ## Commands
 
 All development commands should be run inside Docker containers via `docker compose`.
@@ -60,104 +72,142 @@ make publish
 
 The bundle centers around the `Result` object pattern for use case responses:
 
-- **Result** (`src/UseCase/Result.php`): Generic container for use case outputs with type safety, metadata, and error
-  codes
-- **ResultType** (`src/UseCase/ResultType.php`): Enum defining result states (SUCCESS, FAILURE, NOT_FOUND, etc.) that
-  map to HTTP status codes
-- Result objects are iterable and support both single items and collections
+- **Result** (from `team-mate-pro/contracts`): Generic container for use case outputs with type safety, metadata, and error codes
+- **ResultType** (from `team-mate-pro/contracts`): Enum defining result states mapped to HTTP status codes
+
+**ResultType → HTTP Status mapping:**
+- 2xx: `SUCCESS` → 200, `SUCCESS_CREATED` → 201, `ACCEPTED` → 202, `SUCCESS_NO_CONTENT` → 204
+- 4xx: `FAILURE` → 400, `UNAUTHORIZED` → 401, `FORBIDDEN` → 403, `NOT_FOUND` → 404
+- 4xx: `DUPLICATED` → 409, `GONE`/`EXPIRED` → 410, `PRECONDITION_FAILED` → 412
+- 4xx: `UNPROCESSABLE` → 422, `LOCKED` → 423, `TOO_MANY_REQUESTS` → 429
+- 5xx: `SERVICE_UNAVAILABLE` → 503
 
 ### Request Validation Flow
 
 Requests extend `AbstractValidatedRequest` which provides:
 
-1. **Auto-population**: Request data (JSON body, query params, route attributes) automatically populates class
-   properties
-2. **Security check**: Override `securityCheck()` for authorization logic before validation
-3. **Auto-validation**: Symfony validator constraints run automatically on construction (disable via
-   `autoValidateRequest()`)
+1. **Auto-population**: Request data (JSON body, query params, route attributes, multipart form data) populates properties
+2. **Security check**: Override `securityCheck()` for authorization logic (runs BEFORE validation)
+3. **Auto-validation**: Symfony validator constraints run automatically (disable via `autoValidateRequest()`)
 4. **User injection**: If request has `userId` property and user is authenticated, it's auto-populated
-5. **getValue()**: Helper method with comprehensive validation that throws `HttpMalformedRequestException` for null,
-   undefined, or unset properties
+5. **getValue()**: Helper with validation and automatic type casting (string↔int↔float↔bool)
+6. **File uploads**: Supports 'file' or 'files' keys for file uploads
 
 Two populate strategies available:
-
 - `PROPERTY_SET_STRATEGY` (default): Direct property assignment
 - `SERIALIZER_STRATEGY`: Uses Symfony serializer for complex denormalization
 
-Access dependencies via `RequestDependencies` object: validator, requestStack, security, serializer
+### PATCH Requests with Undefined Pattern
+
+For partial updates, use `Undefined` sentinel value:
+
+```php
+use TeamMatePro\Contracts\Dto\Undefined;
+use TeamMatePro\UseCaseBundle\Validator\PatchValidation;
+
+final class UpdateUserRequest extends AbstractValidatedRequest
+{
+    #[PatchValidation([new Assert\Email()])]
+    public string|Undefined $email = new Undefined();
+}
+```
+
+- `Undefined` marks properties not provided in the request
+- `PatchValidation` constraint only validates if value is NOT `Undefined`
+- `PartialUpdateService` maps DTOs to entities, skipping `Undefined` values
 
 ### REST API Controllers
 
 Extend `AbstractRestApiController` for standardized JSON responses:
 
-- `response(Result $result, $serializationGroups, $headers)`: Converts Result to JsonResponse with proper HTTP status
-- `responseWithCache(Result $result, $cacheInSeconds, ...)`: Adds Cache-Control headers (supports separate s-maxage and
-  max-age)
-- `ResultRestRenderer`: Maps ResultType enum cases to HTTP status codes
+- `response(Result $result, $serializationGroups, $headers)`: Converts Result to JsonResponse
+- `responseWithCache(Result $result, $cacheInSeconds, ...)`: Adds Cache-Control headers
+- `ResultRestRenderer`: Maps ResultType enum to HTTP status codes
 
-### Repository Pattern
+### Utilities
 
-- **Collection** (`src/Repository/Collection.php`): Generic collection object with items, total count, and limit
-- **Pagination** (`src/Repository/Pagination.php`): Pagination helper for repository queries
-
-### Response Factories
-
-`ResultResponseFactory` provides blob response generation:
-
-- `createCsvResponse()`: Converts Result data to CSV (optionally base64 encoded)
-- `createBlobResponse()`: Converts Stringable Result items to binary responses
-
-### Value Objects
-
-Store reusable value objects in `src/ValueObject/`. Example: `TimeRange` with year and quarter support.
-
-### Exception Handling
-
-Event listeners in `src/Http/EventListener/`:
-
-- `ValidationExceptionListener`: Catches validation exceptions and returns structured error responses
-- `AuthorizationExceptionListener`: Handles access denied exceptions
+- **PartialUpdateService**: Maps DTO getters to entity setters, skipping `Undefined` values
+- **ContentTypeChecker**: Detects Accept header for CSV/PDF content negotiation
+- **ResultResponseFactory**: Creates CSV/blob responses from Result objects
 
 ## Key Patterns
 
-### Creating a new validated request:
+### 1. Define DTO Interface (UCB-001)
 
 ```php
-class MyRequest extends AbstractValidatedRequest
+interface CreateUserDtoInterface
+{
+    public function getEmail(): string;
+    public function getName(): string;
+}
+```
+
+### 2. Create Validated Request implementing interface
+
+```php
+final class CreateUserRequest extends AbstractValidatedRequest implements CreateUserDtoInterface
 {
     #[Assert\NotBlank]
-    public string $name;
+    #[Assert\Email]
+    public string $email;
+
+    public function getEmail(): string
+    {
+        return $this->getValue('email');
+    }
 
     protected function securityCheck(): bool
     {
-        return $this->isGranted('ROLE_USER');
+        return $this->isGranted('ROLE_ADMIN');
     }
 }
 ```
 
-### Creating a use case result:
+### 3. Create UseCase with __invoke (UCB-002)
 
 ```php
-Result::create(ResultType::SUCCESS, 'User created')
-    ->with($user)
-    ->withMeta('count', 1)
-    ->withErrorCode('USER_EXISTS');
+final readonly class CreateUserUseCase
+{
+    public function __invoke(CreateUserDtoInterface $dto): Result
+    {
+        // Pure business logic - NO authorization here (UCB-003)
+        $user = $this->factory->create($dto->getEmail());
+        $this->repository->save($user);
+
+        return Result::create(ResultType::SUCCESS_CREATED)->with($user);
+    }
+}
 ```
 
-### REST controller response:
+### 4. REST Controller with Action suffix (UCB-004, UCB-005)
 
 ```php
-public function __invoke(MyRequest $request): JsonResponse
+final class UserController extends AbstractRestApiController
 {
-    $result = $this->useCase->execute($request);
-    return $this->response($result, ['user:read']);
+    #[Route('/api/users', methods: ['POST'])]
+    public function createUserAction(CreateUserRequest $request, CreateUserUseCase $useCase): JsonResponse
+    {
+        return $this->response($useCase($request), ['user:read']);
+    }
 }
 ```
 
 ## Testing Structure
 
-Tests located in `tests/Unit/` mirroring `src/` structure. No PHPUnit XML config - configuration in composer.json
-scripts. Test environment set via `APP_ENV=test`.
+Tests located in `tests/Unit/` mirroring `src/` structure.
+
+**Test naming convention (Given-When-Then with camelCase):**
+```php
+#[Test]
+public function newUserWithValidEmailIsCreatedSuccessfully(): void
+{
+    // Given: <setup>
+    // When: <action>
+    // Then: <assertions>
+}
+```
+
+**Mother Objects**: Test data builders in `tests/_Data/MotherObject/` for Result, Collection, Pagination
 
 ## Package Publishing
 
@@ -176,16 +226,11 @@ CI/CD (`.gitlab-ci.yml`) runs unit tests on all commits and publishes tagged ver
 - **Coverage**: Analyzes both `src/` and `tests/` directories
 - **Extensions**: PHPUnit and Symfony extensions enabled
 - **Commands**:
-  - `make phpstan` - Run static analysis (alias to `composer phpstan`)
-  - `make phpstan_baseline` - Regenerate baseline (alias to `composer phpstan:baseline`)
-- **Baseline**: `phpstan-baseline.neon` contains 113 known issues to fix incrementally
-
-Current configuration ignores:
-- Test-specific patterns (constructor instantiation, generic types)
-- PHPDoc type certainty checks (treatPhpDocTypesAsCertain: false)
+  - `make phpstan` - Run static analysis
+  - `make phpstan_baseline` - Regenerate baseline
+- **Baseline**: `phpstan-baseline.neon` contains known issues
 
 ### PHPUnit
 - **Version**: 10.x (latest stable)
 - **Features**: Attributes-based configuration, data providers, testdox output with colors
 - **Coverage**: 165 tests, 297 assertions across all core components
-- **Mother Objects**: Test data builders in `tests/_Data/MotherObject/` for Result, Collection, Pagination

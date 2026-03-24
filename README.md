@@ -8,11 +8,12 @@ A Symfony PHP bundle providing architectural building blocks for clean REST API 
 
 The Super Simple Architecture approach focuses on:
 
-- **Use-case driven design**: Business logic encapsulated in dedicated use case classes
-- **Validated requests**: Automatic request validation with Symfony constraints
-- **Standardized results**: Type-safe Result objects with consistent error handling
-- **REST API patterns**: Controllers that transform use case results into proper HTTP responses
-- **Repository abstraction**: Collection and pagination helpers for data access
+- **Use-case driven design**: Business logic encapsulated in dedicated use case classes with `__invoke()` method
+- **Interface-based DTOs**: Use cases accept interfaces, not concrete request classes, for loose coupling
+- **Validated requests**: Automatic request validation with Symfony constraints and authorization via `securityCheck()`
+- **Standardized results**: Type-safe Result objects with consistent error handling and HTTP status mapping
+- **REST API patterns**: Controllers that transform use case results into proper HTTP responses using `$this->response()`
+- **Partial updates**: PATCH request support with `Undefined` sentinel values and conditional validation
 
 ## Installation
 
@@ -22,13 +23,25 @@ composer require team-mate-pro/use-case-bundle
 
 ## Quick Start
 
-### 1. Create a Validated Request
+### 1. Define a DTO Interface
+
+Use cases should depend on interfaces, not concrete request classes. This enables loose coupling and testability.
+
+```php
+interface CreateUserDtoInterface
+{
+    public function getEmail(): string;
+    public function getName(): string;
+}
+```
+
+### 2. Create a Validated Request
 
 ```php
 use TeamMatePro\UseCaseBundle\Http\AbstractValidatedRequest;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class CreateUserRequest extends AbstractValidatedRequest
+final class CreateUserRequest extends AbstractValidatedRequest implements CreateUserDtoInterface
 {
     #[Assert\NotBlank]
     #[Assert\Email]
@@ -38,6 +51,16 @@ class CreateUserRequest extends AbstractValidatedRequest
     #[Assert\Length(min: 3)]
     public string $name;
 
+    public function getEmail(): string
+    {
+        return $this->getValue('email');
+    }
+
+    public function getName(): string
+    {
+        return $this->getValue('name');
+    }
+
     protected function securityCheck(): bool
     {
         return $this->isGranted('ROLE_ADMIN');
@@ -46,65 +69,90 @@ class CreateUserRequest extends AbstractValidatedRequest
 ```
 
 Request objects automatically:
-- Populate from JSON body, query params, and route attributes
+- Populate from JSON body, query params, route attributes, and multipart form data
 - Validate using Symfony validator constraints
 - Inject authenticated user ID if `userId` property exists
-- Throw security exceptions if `securityCheck()` returns false
+- Handle file uploads via 'file' or 'files' keys
+- Throw `AccessDeniedException` if `securityCheck()` returns false
 
-### 2. Create a Use Case
+### 3. Create a Use Case
+
+Use cases contain pure business logic. They accept DTO interfaces (not concrete requests) and return Result objects.
 
 ```php
-use TeamMatePro\UseCaseBundle\UseCase\Result;
-use TeamMatePro\UseCaseBundle\UseCase\ResultType;
+use TeamMatePro\Contracts\Collection\Result;
+use TeamMatePro\Contracts\Collection\ResultType;
 
-class CreateUserUseCase
+final readonly class CreateUserUseCase
 {
-    public function execute(CreateUserRequest $request): Result
-    {
-        // Business logic here
-        $user = new User($request->email, $request->name);
+    public function __construct(
+        private UserRepository $repository,
+        private UserFactory $factory
+    ) {}
 
-        // Check for conflicts
-        if ($this->userExists($user->email)) {
-            return Result::create(ResultType::FAILURE, 'User already exists')
+    public function __invoke(CreateUserDtoInterface $dto): Result
+    {
+        if ($this->repository->existsByEmail($dto->getEmail())) {
+            return Result::create(ResultType::DUPLICATED, 'User already exists')
                 ->withErrorCode('USER_EXISTS');
         }
 
+        $user = $this->factory->create(
+            email: $dto->getEmail(),
+            name: $dto->getName()
+        );
+
         $this->repository->save($user);
 
-        return Result::create(ResultType::SUCCESS, 'User created')
-            ->with($user)
-            ->withMeta('id', $user->getId());
+        return Result::create(ResultType::SUCCESS_CREATED)
+            ->with($user);
     }
 }
 ```
 
-Result objects support:
-- Type-safe success/failure states (SUCCESS, FAILURE, NOT_FOUND, etc.)
-- Single items or collections with `->with($data)`
-- Metadata with `->withMeta($key, $value)`
-- Error codes with `->withErrorCode($code)`
-- Iteration over result items
+**Important**: Use cases must NOT contain authorization logic. Authorization belongs in the Request's `securityCheck()` method.
 
-### 3. Create a REST Controller
+### 4. Create a REST Controller
+
+Controllers use the `Action` suffix convention and delegate to use cases via `$this->response()`.
 
 ```php
 use TeamMatePro\UseCaseBundle\Http\AbstractRestApiController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-class CreateUserController extends AbstractRestApiController
+final class UserController extends AbstractRestApiController
 {
-    public function __construct(
-        private readonly CreateUserUseCase $useCase
-    ) {}
-
     #[Route('/api/users', methods: ['POST'])]
-    public function __invoke(CreateUserRequest $request): JsonResponse
-    {
-        $result = $this->useCase->execute($request);
+    public function createUserAction(
+        CreateUserRequest $request,
+        CreateUserUseCase $useCase
+    ): JsonResponse {
+        return $this->response($useCase($request), ['user:read']);
+    }
 
-        return $this->response($result, ['user:read']);
+    #[Route('/api/users/{userId}', methods: ['GET'])]
+    public function getUserAction(
+        GetUserRequest $request,
+        GetUserUseCase $useCase
+    ): JsonResponse {
+        return $this->response($useCase($request), ['user:read', 'user:details']);
+    }
+
+    #[Route('/api/users/{userId}', methods: ['PATCH'])]
+    public function updateUserAction(
+        UpdateUserRequest $request,
+        UpdateUserUseCase $useCase
+    ): JsonResponse {
+        return $this->response($useCase($request), ['user:read']);
+    }
+
+    #[Route('/api/users/{userId}', methods: ['DELETE'])]
+    public function deleteUserAction(
+        DeleteUserRequest $request,
+        DeleteUserUseCase $useCase
+    ): JsonResponse {
+        return $this->response($useCase($request));
     }
 }
 ```
@@ -121,40 +169,103 @@ Controllers automatically:
 The `Result` object is the heart of SSA, providing a standardized container for use case outputs:
 
 ```php
+use TeamMatePro\Contracts\Collection\Result;
+use TeamMatePro\Contracts\Collection\ResultType;
+
 // Success with data
-Result::create(ResultType::SUCCESS, 'Operation successful')
-    ->with($user);
+Result::create(ResultType::SUCCESS)->with($user);
+
+// Created resource
+Result::create(ResultType::SUCCESS_CREATED)->with($team);
 
 // Failure with error code
-Result::create(ResultType::FAILURE, 'Validation failed')
-    ->withErrorCode('INVALID_DATA');
-
-// Collection with metadata
-Result::create(ResultType::SUCCESS, 'Users retrieved')
-    ->with($users)
-    ->withMeta('total', 100)
-    ->withMeta('page', 1);
+Result::create(ResultType::DUPLICATED, 'Email already exists')
+    ->withErrorCode('EMAIL_TAKEN');
 
 // Not found
 Result::create(ResultType::NOT_FOUND, 'User not found');
+
+// No content (for DELETE operations)
+Result::create(ResultType::SUCCESS_NO_CONTENT);
+
+// Accepted (async operation)
+Result::create(ResultType::ACCEPTED);
+
+// Collection with metadata
+Result::create()->with($users)
+    ->withMeta('total', 100)
+    ->withMeta('page', 1);
 ```
 
 **ResultType enum** maps to HTTP status codes:
-- `SUCCESS` → 200
-- `FAILURE` → 400
-- `NOT_FOUND` → 404
-- `CREATED` → 201
-- `NO_CONTENT` → 204
+
+| ResultType | HTTP Status | Usage |
+|------------|-------------|-------|
+| `SUCCESS` | 200 OK | Successful GET, PATCH operations |
+| `SUCCESS_CREATED` | 201 Created | Successful POST creating a resource |
+| `ACCEPTED` | 202 Accepted | Async operations, background jobs |
+| `SUCCESS_NO_CONTENT` | 204 No Content | Successful DELETE operations |
+| `FAILURE` | 400 Bad Request | Business rule violations |
+| `UNAUTHORIZED` | 401 Unauthorized | Authentication required |
+| `FORBIDDEN` | 403 Forbidden | Authenticated but not authorized |
+| `NOT_FOUND` | 404 Not Found | Resource doesn't exist |
+| `DUPLICATED` | 409 Conflict | Resource already exists |
+| `GONE` | 410 Gone | Resource was deleted |
+| `EXPIRED` | 410 Gone | Resource has expired |
+| `PRECONDITION_FAILED` | 412 Precondition Failed | ETag mismatch, version conflict |
+| `UNPROCESSABLE` | 422 Unprocessable Entity | Semantic validation errors |
+| `LOCKED` | 423 Locked | Resource locked (e.g., foreign key constraint) |
+| `TOO_MANY_REQUESTS` | 429 Too Many Requests | Rate limiting |
+| `SERVICE_UNAVAILABLE` | 503 Service Unavailable | Temporary unavailability |
 
 ### Validated Requests
 
-Two populate strategies available:
+#### Auto-Population
+
+Request data is merged from multiple sources in this order:
+1. Route attributes (from URL path)
+2. JSON body
+3. Query parameters
+4. POST form data (multipart/form-data)
+5. File uploads (via 'file' or 'files' keys)
+
+#### getValue() Helper with Type Casting
+
+The `getValue()` method provides validation and automatic type casting:
+
+```php
+class UpdatePlayerRequest extends AbstractValidatedRequest
+{
+    public string|int|null $age;
+    public string|bool|null $active;
+
+    // Automatically casts int to string
+    public function getAge(): string
+    {
+        return $this->getValue('age'); // "25" even if $age = 25
+    }
+
+    // Automatically casts string to bool
+    public function isActive(): bool
+    {
+        return $this->getValue('active'); // true if $active = "true"
+    }
+}
+```
+
+**Casting Rules:**
+- **To string**: int, float, bool (true→"1", false→"0")
+- **To int**: numeric string, float (truncates), bool (true→1, false→0)
+- **To float**: numeric string, int
+- **To bool**: string ("1","true","yes","on"→true), int (0→false, other→true)
+
+#### Populate Strategies
 
 ```php
 // Default: Direct property assignment
 class MyRequest extends AbstractValidatedRequest
 {
-    protected function populateStrategy(): string
+    protected function getPopulateStrategy(): string
     {
         return self::PROPERTY_SET_STRATEGY; // default
     }
@@ -163,39 +274,155 @@ class MyRequest extends AbstractValidatedRequest
 // Serializer: For complex denormalization
 class ComplexRequest extends AbstractValidatedRequest
 {
-    protected function populateStrategy(): string
+    protected function getPopulateStrategy(): string
     {
         return self::SERIALIZER_STRATEGY;
     }
 }
 ```
 
-**Helper methods**:
-- `getValue(string $property)`: Returns property value or throws exception if null/unset
-- `securityCheck()`: Override for custom authorization logic
-- `autoValidateRequest()`: Return false to disable auto-validation
+### PATCH Requests with Undefined Pattern
+
+For partial updates, use the `Undefined` sentinel value and `PatchValidation` constraint:
+
+```php
+use TeamMatePro\Contracts\Dto\Undefined;
+use TeamMatePro\UseCaseBundle\Validator\PatchValidation;
+use Symfony\Component\Validator\Constraints as Assert;
+
+final class UpdateUserRequest extends AbstractValidatedRequest implements UpdateUserDtoInterface
+{
+    #[PatchValidation([
+        new Assert\NotBlank(),
+        new Assert\Email(),
+    ])]
+    public string|Undefined $email = new Undefined();
+
+    #[PatchValidation([
+        new Assert\Length(min: 2, max: 100),
+    ])]
+    public string|Undefined $name = new Undefined();
+
+    public function getEmail(): string|Undefined
+    {
+        return $this->getValue('email');
+    }
+
+    public function getName(): string|Undefined
+    {
+        return $this->getValue('name');
+    }
+}
+```
+
+The `PatchValidation` constraint:
+- Only validates properties that were explicitly provided in the request
+- Skips validation for properties that remain `Undefined`
+- Allows you to have required validation on fields that are optional to send
+
+### PartialUpdateService
+
+Map values from DTOs to entities, automatically skipping `Undefined` values:
+
+```php
+use TeamMatePro\UseCaseBundle\Utils\PartialUpdateService;
+
+final readonly class UpdateUserUseCase
+{
+    public function __construct(
+        private UserRepository $repository,
+        private PartialUpdateService $partialUpdate
+    ) {}
+
+    public function __invoke(UpdateUserDtoInterface $dto): Result
+    {
+        $user = $this->repository->getOne($dto->getUserId());
+
+        // Only updates properties that aren't Undefined
+        $this->partialUpdate->map($dto, $user);
+
+        $this->repository->save($user);
+
+        return Result::create()->with($user);
+    }
+}
+```
+
+The `PartialUpdateService`:
+- Maps getters from source (`getEmail()`) to setters on target (`setEmail()`) or public properties
+- Automatically skips values that are instances of `Undefined`
+- Supports a `$strict` mode that throws exceptions for unmapped properties
+- Supports a `$skips` array to exclude specific properties
 
 ### Repository Collections
 
 ```php
-use TeamMatePro\UseCaseBundle\Repository\Collection;
-use TeamMatePro\UseCaseBundle\Repository\Pagination;
+use TeamMatePro\Contracts\Collection\Pagination;
+use TeamMatePro\Contracts\Collection\PaginatedCollection;
 
 // Create pagination
 $pagination = new Pagination(page: 1, limit: 20);
 
-// Return collection
+// Return paginated collection
 $items = $this->repository->findAll($pagination);
-$collection = new Collection(
+$collection = new PaginatedCollection(
     items: $items,
-    total: $this->repository->count(),
-    limit: $pagination->getLimit()
+    count: $this->repository->count(),
+    pagination: $pagination
 );
 
 // Use in Result
-return Result::create(ResultType::SUCCESS, 'Users retrieved')
-    ->with($collection);
+return Result::create()->with($collection);
 ```
+
+For requests with pagination support, use the `PaginationTrait`:
+
+```php
+use TeamMatePro\UseCaseBundle\Http\PaginationTrait;
+
+final class FindUsersRequest extends AbstractValidatedRequest implements FindUsersDtoInterface
+{
+    use PaginationTrait;
+
+    // Provides: $page, $perPage properties and getPagination() method
+}
+```
+
+### Content Negotiation
+
+Check Accept headers to determine response format:
+
+```php
+use TeamMatePro\UseCaseBundle\Http\ContentType\ContentTypeChecker;
+
+final class ExportController extends AbstractRestApiController
+{
+    #[Route('/api/users', methods: ['GET'])]
+    public function findUsersAction(
+        FindUsersRequest $request,
+        FindUsersUseCase $useCase,
+        ContentTypeChecker $contentTypeChecker,
+        CsvResponseFactory $csvFactory
+    ): Response {
+        $result = $useCase($request);
+
+        if ($contentTypeChecker->isCsvRequest($request)) {
+            return $csvFactory->createCsvResponse($result, ['user:export']);
+        }
+
+        if ($contentTypeChecker->isPdfRequest($request)) {
+            return $this->createPdfResponse($result);
+        }
+
+        return $this->response($result, ['user:read']);
+    }
+}
+```
+
+The `ContentTypeChecker` supports:
+- **CSV detection**: `text/csv`, `application/csv`, `text/comma-separated-values`
+- **PDF detection**: `application/pdf`
+- Case-insensitive matching
 
 ### Response Factories
 
@@ -219,62 +446,139 @@ $response = ResultResponseFactory::createBlobResponse(
 );
 ```
 
-### Content Type Checker
+## Architecture Standards
 
-Check if a request expects a specific content type based on the `Accept` header:
+This bundle is designed to work with the TMP Standards (UCB rules). Key principles:
+
+### UCB-001: UseCase Parameters Must Be Interfaces
 
 ```php
-use TeamMatePro\UseCaseBundle\Http\ContentType\ContentTypeChecker;
+// Correct: UseCase accepts interface
+public function __invoke(CreateUserDtoInterface $dto): Result
 
-class ExportController extends AbstractRestApiController
+// Wrong: UseCase accepts concrete class
+public function __invoke(CreateUserRequest $request): Result
+```
+
+### UCB-002: UseCase Must Have __invoke Method
+
+```php
+// Correct: Single entry point via __invoke
+final readonly class CreateUserUseCase
 {
-    public function __construct(
-        private readonly ContentTypeChecker $contentTypeChecker,
-        private readonly ExportUseCase $useCase
-    ) {}
+    public function __invoke(CreateUserDtoInterface $dto): Result { }
+}
 
-    #[Route('/api/users/export', methods: ['GET'])]
-    public function __invoke(ExportRequest $request): Response
+// Wrong: Named method
+final readonly class CreateUserUseCase
+{
+    public function execute(CreateUserDtoInterface $dto): Result { }
+}
+```
+
+### UCB-003: No Authorization in UseCase Layer
+
+Authorization belongs in the Request's `securityCheck()` method, NOT in the UseCase.
+
+```php
+// Correct: Authorization in Request
+final class CreateUserRequest extends AbstractValidatedRequest
+{
+    protected function securityCheck(): bool
     {
-        $result = $this->useCase->execute($request);
+        return $this->isGranted('ROLE_ADMIN');
+    }
+}
 
-        // Check Accept header to determine response format
-        if ($this->contentTypeChecker->isCsvRequest($request)) {
-            return ResultResponseFactory::createCsvResponse($result, 'users.csv');
-        }
+// Wrong: Security in UseCase
+final readonly class CreateUserUseCase
+{
+    public function __construct(private Security $security) {} // Forbidden!
 
-        if ($this->contentTypeChecker->isPdfRequest($request)) {
-            return ResultResponseFactory::createBlobResponse(
-                result: $result,
-                contentType: 'application/pdf',
-                filename: 'users.pdf'
-            );
-        }
-
-        // Default JSON response
-        return $this->response($result, ['user:read']);
+    public function __invoke(CreateUserDtoInterface $dto): Result
+    {
+        if (!$this->security->isGranted('ROLE_ADMIN')) { } // Forbidden!
     }
 }
 ```
 
-The `ContentTypeChecker` supports:
-- **CSV detection**: `text/csv`, `application/csv`, `text/comma-separated-values`
-- **PDF detection**: `application/pdf`
-- Case-insensitive matching
-- Multiple MIME types in Accept header (e.g., `text/csv, application/json`)
+### UCB-004: Controller Must Use $this->response()
 
-Any class implementing `HeadersAwareInterface` can be checked (including `AbstractValidatedRequest`).
+```php
+// Correct: Use $this->response()
+return $this->response($useCase($request), ['user:read']);
+
+// Wrong: Manual JSON construction
+return $this->json(['user' => $user]);
+```
+
+### UCB-005: Controller Action Methods Must Have "Action" Suffix
+
+```php
+// Correct
+public function createUserAction(): JsonResponse { }
+
+// Wrong
+public function createUser(): JsonResponse { }
+```
+
+## Architecture Flow
+
+```
+HTTP Request
+    ↓
+Controller receives Request object
+    ↓
+Request auto-validates (constraints)
+    ↓
+Request checks authorization (securityCheck())
+    ↓
+Controller invokes UseCase with Request (implements DTO interface)
+    ↓
+UseCase executes pure business logic
+    ↓
+UseCase returns Result object
+    ↓
+Controller converts Result to JsonResponse via $this->response()
+    ↓
+HTTP Response with proper status code
+```
+
+## Error Handling
+
+Event listeners provide automatic exception handling:
+
+- **ValidationExceptionListener**: Catches validation exceptions, returns structured error JSON
+- **AuthorizationExceptionListener**: Handles access denied exceptions with 403 responses
+- **HttpMalformedRequestException**: Thrown by `getValue()` for null/undefined/unset properties
+
+### Error Codes
+
+Use error codes for client-side handling of specific failure cases:
+
+```php
+final class ErrorCodes
+{
+    public const int USER_ALREADY_EXISTS = 100;
+    public const int EMAIL_ALREADY_TAKEN = 101;
+    public const int INVALID_PASSWORD = 102;
+}
+
+// In use case
+return Result::create(ResultType::DUPLICATED, 'Email already exists')
+    ->withErrorCode(ErrorCodes::EMAIL_ALREADY_TAKEN);
+```
 
 ## Development
 
-This bundle uses Docker for development. All commands run inside containers to ensure consistency.
+This bundle uses Docker for development. All commands run inside containers.
 
 ### Setup
 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd ssa-core-bundle
+cd use-case-bundle
 
 # Install dependencies (inside Docker)
 docker compose run --rm lib composer install
@@ -314,7 +618,6 @@ PHPStan configuration:
 - Level: max (highest strictness)
 - Analyzes both `src/` and `tests/`
 - Extensions: PHPUnit, Symfony
-- Baseline: 113 known issues (see `phpstan-baseline.neon`)
 
 ### Interactive Development
 
@@ -338,72 +641,58 @@ make tag
 make publish
 ```
 
-The `make tag` command:
-1. Extracts version from `composer.json`
-2. Creates and pushes git tag
-3. Triggers GitLab CI/CD to publish to package registry
-
-## Architecture Patterns
-
-### Use Case Flow
-
-```
-HTTP Request
-    ↓
-Controller receives Request object
-    ↓
-Request auto-validates (constraints + security check)
-    ↓
-Controller passes Request to Use Case
-    ↓
-Use Case executes business logic
-    ↓
-Use Case returns Result object
-    ↓
-Controller converts Result to JsonResponse
-    ↓
-HTTP Response
-```
-
-### Exception Handling
-
-Event listeners provide automatic exception handling:
-
-- **ValidationExceptionListener**: Catches validation exceptions, returns structured error JSON
-- **AuthorizationExceptionListener**: Handles access denied exceptions with 403 responses
-
-### Value Objects
-
-Store reusable value objects in `src/ValueObject/`:
+## Testing Your Integration
 
 ```php
-// Example: TimeRange with quarters
-$timeRange = new TimeRange(year: 2025, quarter: 1);
+use TeamMatePro\Contracts\Collection\Result;
+use TeamMatePro\Contracts\Collection\ResultType;
+
+class CreateUserUseCaseTest extends TestCase
+{
+    #[Test]
+    public function newUserIsCreatedSuccessfully(): void
+    {
+        // Given
+        $dto = $this->createMock(CreateUserDtoInterface::class);
+        $dto->method('getEmail')->willReturn('test@example.com');
+        $dto->method('getName')->willReturn('Test User');
+
+        // When
+        $result = $this->useCase->__invoke($dto);
+
+        // Then
+        $this->assertSame(ResultType::SUCCESS_CREATED, $result->getType());
+        $this->assertNotNull($result->getResult());
+    }
+
+    #[Test]
+    public function duplicateEmailReturnsDuplicatedResult(): void
+    {
+        // Given: existing user with same email
+        $this->givenUserExistsWithEmail('test@example.com');
+
+        $dto = $this->createMock(CreateUserDtoInterface::class);
+        $dto->method('getEmail')->willReturn('test@example.com');
+
+        // When
+        $result = $this->useCase->__invoke($dto);
+
+        // Then
+        $this->assertSame(ResultType::DUPLICATED, $result->getType());
+        $this->assertSame('USER_EXISTS', $result->getErrorCode());
+    }
+}
 ```
+
+## Requirements
+
+- PHP >= 8.3
+- Symfony >= 7.0
+- Docker (for development)
 
 ## Configuration
 
 No special configuration required. The bundle auto-configures when installed in a Symfony application.
-
-## Testing Your Integration
-
-```php
-// In your application tests
-use TeamMatePro\UseCaseBundle\UseCase\Result;
-use TeamMatePro\UseCaseBundle\UseCase\ResultType;
-
-class MyUseCaseTest extends TestCase
-{
-    public function testExecute(): void
-    {
-        $request = new MyRequest();
-        $result = $this->useCase->execute($request);
-
-        $this->assertEquals(ResultType::SUCCESS, $result->getType());
-        $this->assertNotNull($result->getItem());
-    }
-}
-```
 
 ## Contributing
 
@@ -412,12 +701,6 @@ class MyUseCaseTest extends TestCase
 3. Write tests for your changes
 4. Ensure PHPStan passes at max level
 5. Submit a pull request
-
-## Requirements
-
-- PHP >= 8.2
-- Symfony >= 7.0
-- Docker (for development)
 
 ## License
 

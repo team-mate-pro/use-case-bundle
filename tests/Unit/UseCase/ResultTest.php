@@ -193,16 +193,27 @@ final class ResultTest extends TestCase
 
     public static function resultTypeProvider(): Generator
     {
+        // 2xx Success
         yield 'SUCCESS' => [ResultType::SUCCESS];
-        yield 'SUCCESS_NO_CONTENT' => [ResultType::SUCCESS_NO_CONTENT];
         yield 'SUCCESS_CREATED' => [ResultType::SUCCESS_CREATED];
-        yield 'FAILURE' => [ResultType::FAILURE];
         yield 'ACCEPTED' => [ResultType::ACCEPTED];
-        yield 'DUPLICATED' => [ResultType::DUPLICATED];
+        yield 'SUCCESS_NO_CONTENT' => [ResultType::SUCCESS_NO_CONTENT];
+
+        // 4xx Client Errors
+        yield 'FAILURE' => [ResultType::FAILURE];
+        yield 'UNAUTHORIZED' => [ResultType::UNAUTHORIZED];
+        yield 'FORBIDDEN' => [ResultType::FORBIDDEN];
         yield 'NOT_FOUND' => [ResultType::NOT_FOUND];
-        yield 'LOCKED' => [ResultType::LOCKED];
+        yield 'DUPLICATED' => [ResultType::DUPLICATED];
         yield 'GONE' => [ResultType::GONE];
         yield 'EXPIRED' => [ResultType::EXPIRED];
+        yield 'PRECONDITION_FAILED' => [ResultType::PRECONDITION_FAILED];
+        yield 'UNPROCESSABLE' => [ResultType::UNPROCESSABLE];
+        yield 'LOCKED' => [ResultType::LOCKED];
+        yield 'TOO_MANY_REQUESTS' => [ResultType::TOO_MANY_REQUESTS];
+
+        // 5xx Server Errors
+        yield 'SERVICE_UNAVAILABLE' => [ResultType::SERVICE_UNAVAILABLE];
     }
 
     public function testMotherObjectSuccess(): void
