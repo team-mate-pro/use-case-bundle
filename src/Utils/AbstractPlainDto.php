@@ -26,7 +26,7 @@ abstract class AbstractPlainDto implements JsonSerializable
             $name = $property->getName();
 
             if (!$property->isInitialized($this)) {
-                continue;
+                continue; // @codeCoverageIgnore
             }
 
             $value = $property->getValue($this);

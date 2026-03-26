@@ -17,4 +17,5 @@ include:
     file:
       - '/templates/common.yml'
       - '/templates/library/static-analysis.yml'
-      - '/templates/library/publish.yml'
+      - '/templates/library/publish_public.yml'
+

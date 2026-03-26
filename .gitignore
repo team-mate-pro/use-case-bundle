@@ -3,3 +3,6 @@ vendor
 /composer.lock
 /var
 .phpcs-cache
+.phpunit.cache
+coverage-clover.xml
+test-results

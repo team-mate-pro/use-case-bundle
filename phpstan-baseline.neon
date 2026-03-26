@@ -169,12 +169,6 @@ parameters:
 			path: src/Http/ResultResponseFactory.php
 
 		-
-			message: '#^Trait TeamMatePro\\UseCaseBundle\\Http\\UseSerializerTrait is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: src/Http/UseSerializerTrait.php
-
-		-
 			message: '#^Cannot access offset ''code'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1

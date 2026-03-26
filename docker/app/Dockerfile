@@ -8,7 +8,11 @@ RUN apk --update add --no-cache \
     libpng-dev \
     libzip-dev \
     icu-dev \
+    $PHPIZE_DEPS \
     && docker-php-ext-install zip intl \
+    && pecl install pcov-1.0.12 \
+    && docker-php-ext-enable pcov \
+    && echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory.ini \
     && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 

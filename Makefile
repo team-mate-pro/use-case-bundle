@@ -1,7 +1,7 @@
 ### This is a reference (complete) MAKE file setup
 ### Remove the functionalities you don't need
 
-.PHONY: help
+.PHONY: help tests check check_fast fix t c cf f
 
 ## --- Mandatory variables ---
 
@@ -36,18 +36,6 @@ fast: ### Fast start already built containers
 
 stop: ### Stop all existing containers
 	$(docker-compose) down
-
-phpcs: ### Run PHP CodeSniffer
-	$(docker-compose) exec $(main-container-name) composer phpcs:check
-
-phpcs_fix: ### Auto-fix PHP CodeSniffer issues
-	$(docker-compose) exec $(main-container-name) composer phpcs:fix
-
-phpstan: ### Run PHPStan static analysis
-	$(docker-compose) exec $(main-container-name) composer phpstan
-
-tests_unit: ### Run unit tests
-	$(docker-compose) exec $(main-container-name) composer tests:unit
 
 check: ### [c] Should run all mandatory checks that run in CI and CD process
 	make phpcs

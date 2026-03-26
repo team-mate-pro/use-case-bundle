@@ -100,4 +100,9 @@ final class FakeTestingRequest extends AbstractValidatedRequest
     {
         return $this->getValue($property);
     }
+
+    public function getValueAsStringOrInt(string $property): string|int
+    {
+        return $this->getValue($property);
+    }
 }
