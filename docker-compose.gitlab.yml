@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: docker/app/Dockerfile
       target: static_analysis
-    command: [ "phpcs:check" ]
+    command: [ "phpcs" ]
 
   tests_phpstan:
     build:
