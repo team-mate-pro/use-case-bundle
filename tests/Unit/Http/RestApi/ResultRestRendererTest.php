@@ -42,12 +42,27 @@ final class ResultRestRendererTest extends TestCase
 
     public function testGetHttpStatusCode(): void
     {
+        // 2xx Success
         $this->assertSame(200, ResultRestRenderer::getHttpStatusCode(ResultType::SUCCESS));
-        $this->assertSame(204, ResultRestRenderer::getHttpStatusCode(ResultType::SUCCESS_NO_CONTENT));
-        $this->assertSame(400, ResultRestRenderer::getHttpStatusCode(ResultType::FAILURE));
+        $this->assertSame(201, ResultRestRenderer::getHttpStatusCode(ResultType::SUCCESS_CREATED));
         $this->assertSame(202, ResultRestRenderer::getHttpStatusCode(ResultType::ACCEPTED));
-        $this->assertSame(409, ResultRestRenderer::getHttpStatusCode(ResultType::DUPLICATED));
+        $this->assertSame(204, ResultRestRenderer::getHttpStatusCode(ResultType::SUCCESS_NO_CONTENT));
+
+        // 4xx Client Errors
+        $this->assertSame(400, ResultRestRenderer::getHttpStatusCode(ResultType::FAILURE));
+        $this->assertSame(401, ResultRestRenderer::getHttpStatusCode(ResultType::UNAUTHORIZED));
+        $this->assertSame(403, ResultRestRenderer::getHttpStatusCode(ResultType::FORBIDDEN));
         $this->assertSame(404, ResultRestRenderer::getHttpStatusCode(ResultType::NOT_FOUND));
+        $this->assertSame(409, ResultRestRenderer::getHttpStatusCode(ResultType::DUPLICATED));
+        $this->assertSame(410, ResultRestRenderer::getHttpStatusCode(ResultType::GONE));
+        $this->assertSame(410, ResultRestRenderer::getHttpStatusCode(ResultType::EXPIRED));
+        $this->assertSame(412, ResultRestRenderer::getHttpStatusCode(ResultType::PRECONDITION_FAILED));
+        $this->assertSame(422, ResultRestRenderer::getHttpStatusCode(ResultType::UNPROCESSABLE));
+        $this->assertSame(423, ResultRestRenderer::getHttpStatusCode(ResultType::LOCKED));
+        $this->assertSame(429, ResultRestRenderer::getHttpStatusCode(ResultType::TOO_MANY_REQUESTS));
+
+        // 5xx Server Errors
+        $this->assertSame(503, ResultRestRenderer::getHttpStatusCode(ResultType::SERVICE_UNAVAILABLE));
     }
 
     public function testHasItemWhenObjectPassed(): void

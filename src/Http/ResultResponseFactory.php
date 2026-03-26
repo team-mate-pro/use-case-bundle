@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Context\Encoder\CsvEncoderContextBuilder;
 use Symfony\Component\Serializer\Context\Normalizer\ObjectNormalizerContextBuilder;
 use Symfony\Component\Serializer\SerializerInterface;
+
 use function base64_encode;
 
 final readonly class ResultResponseFactory implements ResponseAsBlobCsvInterface, ResponseAsBlobInterface

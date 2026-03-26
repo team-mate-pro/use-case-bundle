@@ -10,18 +10,19 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionUnionType;
 use RuntimeException;
-use TeamMatePro\Contracts\Dto\Undefined;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
+use TeamMatePro\Contracts\Dto\Undefined;
 use TeamMatePro\UseCaseBundle\Http\ContentType\HeadersAwareInterface;
+use TeamMatePro\UseCaseBundle\Http\Exception\HttpMalformedRequestException;
+
 use function array_merge;
 use function get_class;
 use function method_exists;
 use function property_exists;
-use TeamMatePro\UseCaseBundle\Http\Exception\HttpMalformedRequestException;
 use function sprintf;
 
 /**

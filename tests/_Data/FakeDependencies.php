@@ -20,12 +20,10 @@ final readonly class FakeDependencies extends RequestDependencies
 {
     public function __construct()
     {
-        $validator = new class() implements ValidatorInterface {
-
+        $validator = new class () implements ValidatorInterface {
             public function getMetadataFor(mixed $value): MetadataInterface
             {
                 return new class implements MetadataInterface {
-
                     public function getCascadingStrategy(): int
                     {
                         return 0;
@@ -54,30 +52,27 @@ final readonly class FakeDependencies extends RequestDependencies
             }
 
             public function validate(
-                mixed                           $value,
-                array|Constraint|null           $constraints = null,
+                mixed $value,
+                array|Constraint|null $constraints = null,
                 array|GroupSequence|string|null $groups = null
-            ): ConstraintViolationListInterface
-            {
+            ): ConstraintViolationListInterface {
                 return new ConstraintViolationList();
             }
 
             public function validateProperty(
-                object                          $object,
-                string                          $propertyName,
+                object $object,
+                string $propertyName,
                 array|GroupSequence|string|null $groups = null
-            ): ConstraintViolationListInterface
-            {
+            ): ConstraintViolationListInterface {
                 return new ConstraintViolationList();
             }
 
             public function validatePropertyValue(
-                object|string                   $objectOrClass,
-                string                          $propertyName,
-                mixed                           $value,
+                object|string $objectOrClass,
+                string $propertyName,
+                mixed $value,
                 array|GroupSequence|string|null $groups = null
-            ): ConstraintViolationListInterface
-            {
+            ): ConstraintViolationListInterface {
                 return new ConstraintViolationList();
             }
 

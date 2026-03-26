@@ -8,6 +8,7 @@ use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
+
 use function array_map;
 use function iterator_to_array;
 
@@ -37,7 +38,8 @@ final class ValidationExceptionListener
                             iterator_to_array($exception->getViolations())
                         )
                     ]
-                ), 422
+                ),
+                422
             );
 
             $event->setResponse($response);

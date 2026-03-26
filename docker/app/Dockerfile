@@ -19,6 +19,7 @@ RUN apk --update add --no-cache bash \
 
 FROM base AS bash
 
+
 WORKDIR /app
 
 COPY . .

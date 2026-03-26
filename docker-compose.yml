@@ -3,10 +3,13 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      target: bash
     container_name: ssa-core-bundle-app
     volumes:
       - .:/app
       - ./vendor:/app/vendor
     working_dir: /app
+    entrypoint: []
+    command: ["bash", "-c", "composer install --no-ansi --no-interaction --no-progress && sleep infinity"]
     tty: true
     stdin_open: true
