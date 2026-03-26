@@ -1,6 +1,38 @@
 services:
-  lib:
+
+  ## --- Local development (persistent container) ---
+
+  app:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
-      target: lib
+      target: bash
+    volumes:
+      - .:/app
+    entrypoint: []
+    command: [ "bash", "-c", "composer install --no-ansi --no-interaction --no-progress && sleep infinity" ]
+    tty: true
+    stdin_open: true
+
+  ## --- CI/CD services (used by shared templates) ---
+
+  tests_phpcs:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: static_analysis
+    command: [ "phpcs:check" ]
+
+  tests_phpstan:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: static_analysis
+    command: [ "phpstan" ]
+
+  tests_unit:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: static_analysis
+    command: [ "tests:unit" ]

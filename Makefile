@@ -46,16 +46,30 @@ fast: ### Fast start already built containers
 stop: ### Stop all existing containers
 	$(docker-compose) down
 
+phpcs: ### Run PHP CodeSniffer
+	$(docker-compose) exec $(main-container-name) composer phpcs:check
+
+phpcs_fix: ### Auto-fix PHP CodeSniffer issues
+	$(docker-compose) exec $(main-container-name) composer phpcs:fix
+
+phpstan: ### Run PHPStan static analysis
+	$(docker-compose) exec $(main-container-name) composer phpstan
+
+tests_unit: ### Run unit tests
+	$(docker-compose) exec $(main-container-name) composer tests:unit
+
 check: ### [c] Should run all mandatory checks that run in CI and CD process
+	make phpcs
 	make phpstan
 	make tests_unit
 
 check_fast: ### [cf] Should run all mandatory checks that run in CI and CD process skipping heavy ones like functional tests
+	make phpcs
 	make phpstan
 	make tests_unit
 
 fix: ### [f] Should run auto fix checks that run in CI and CD process
-	@echo "No auto-fix tools configured"
+	make phpcs_fix
 
 tests: ### [t] Run all tests defined in the project
 	make tests_unit
