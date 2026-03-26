@@ -16,5 +16,5 @@ include:
     ref: main
     file:
       - '/templates/common.yml'
-      - '/templates/docker-app-php-proxy-nginx/static-analysis.yml'
+      - '/templates/library/static-analysis.yml'
       - '/templates/library/publish.yml'
