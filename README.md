@@ -704,7 +704,7 @@ No special configuration required. The bundle auto-configures when installed in 
 
 ## License
 
-Proprietary - Team Mate Pro
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
