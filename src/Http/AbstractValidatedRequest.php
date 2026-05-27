@@ -14,6 +14,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use TeamMatePro\Contracts\Dto\Undefined;
 use TeamMatePro\UseCaseBundle\Http\ContentType\HeadersAwareInterface;
@@ -129,6 +130,7 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
     public const PROPERTY_SET_STRATEGY = 'property';
     public const SERIALIZER_STRATEGY = 'serializer';
 
+    /** @var array<string, list<string|null>> */
     protected array $headers = [];
 
     public function __construct(protected readonly RequestDependencies $deps)
@@ -151,16 +153,23 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
         foreach ($reflection->getProperties() as $property) {
             $type = $property->getType();
 
-            if (!method_exists($type, 'getTypes')) {
+            if (!$type instanceof ReflectionUnionType) {
                 continue;
             }
 
-            foreach ($type->getTypes() as $type) {
-                if ($type->isBuiltin()) {
+            foreach ($type->getTypes() as $subType) {
+                // Defensive: ReflectionUnionType may yield ReflectionIntersectionType in PHP 8.2+ unions like (A&B)|C.
+                // @codeCoverageIgnoreStart
+                if (!$subType instanceof ReflectionNamedType) {
+                    continue;
+                }
+                // @codeCoverageIgnoreEnd
+
+                if ($subType->isBuiltin()) {
                     continue;
                 }
 
-                if ($type->getName() === Undefined::class) {
+                if ($subType->getName() === Undefined::class) {
                     $this->{$property->getName()} = new Undefined();
                 }
             }
@@ -198,10 +207,13 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
             }
         } else {
             if ($this->getPopulateStrategy() === self::SERIALIZER_STRATEGY) {
-                if (!$this->deps->serializer) {
-                    throw new RuntimeException('Serializer is required for this strategy');
+                $serializer = $this->deps->serializer;
+
+                if (!$serializer instanceof DenormalizerInterface) {
+                    throw new RuntimeException('A DenormalizerInterface is required for SERIALIZER_STRATEGY');
                 }
-                $this->deps->serializer->denormalize(
+
+                $serializer->denormalize(
                     $data,
                     get_class($this),
                     null,
@@ -214,8 +226,8 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
 
         $user = $this->deps->security->getUser();
 
-        if (property_exists($this, 'userId') && $user && method_exists($user, 'getId')) {
-            $this->userId = $this->deps->security->getUser()->getId();
+        if (property_exists($this, 'userId') && $user !== null && method_exists($user, 'getId')) {
+            $this->userId = $user->getId();
         }
     }
 
@@ -253,7 +265,10 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
         return $this->headers[$name][0] ?? null;
     }
 
-    public function __call(string $name, array $arguments)
+    /**
+     * @param array<int, mixed> $arguments
+     */
+    public function __call(string $name, array $arguments): mixed
     {
         if ($name === 'getUserId') {
             if (!property_exists($this, 'userId')) {
@@ -268,7 +283,7 @@ abstract class AbstractValidatedRequest implements HeadersAwareInterface
         throw new RuntimeException('Method not found: ' . $name);
     }
 
-    public function __get(string $name)
+    public function __get(string $name): mixed
     {
         if (property_exists($this->deps, $name)) {
             return $this->deps->{$name};

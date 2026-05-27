@@ -80,9 +80,8 @@ final class PaginationTest extends TestCase
         $this->assertSame(10, $pagination->getOffset());
         $this->assertSame(20, $pagination->getLimit());
 
-        // Attempting to modify should not be possible (readonly class)
-        // This test verifies the readonly nature implicitly through type system
-        $this->assertInstanceOf(Pagination::class, $pagination);
+        // The readonly nature is enforced by the type system; getters returning the
+        // same values that were passed in is sufficient to verify construction.
     }
 
     public function testFromPageWithVeryLargePage(): void

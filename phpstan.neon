@@ -1,6 +1,3 @@
-includes:
-    - phpstan-baseline.neon
-
 parameters:
     level: max
     paths:
@@ -11,15 +8,12 @@ parameters:
         - tests/_Data
         - vendor
 
-    # Ignore errors for test-specific patterns
     ignoreErrors:
-        # Test data providers can have generic Result without specifying T
+        # PHPUnit data providers cannot bind a generic Result<T> at the source
+        # of the dataset, so the test method signature has to stay un-parameterized.
         - '#Method .+Test::testHasContent\(\) has parameter \$sut with generic class .+Result but does not specify its types#'
 
-    # Additional strictness
     checkTooWideReturnTypesInProtectedAndPublicMethods: true
     checkUninitializedProperties: true
     checkDynamicProperties: true
-
-    # Don't be overly strict with PHPDoc types in tests
     treatPhpDocTypesAsCertain: false

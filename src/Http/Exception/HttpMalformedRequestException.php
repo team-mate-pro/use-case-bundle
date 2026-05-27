@@ -12,6 +12,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 final class HttpMalformedRequestException extends HttpException
 {
+    /**
+     * @param array<string, string|string[]> $headers
+     */
     public function __construct(int $statusCode = Response::HTTP_BAD_REQUEST, string $message = '', ?\Throwable $previous = null, array $headers = [], int $code = 0)
     {
         parent::__construct($statusCode, $message, $previous, $headers, $code);

@@ -107,6 +107,7 @@ final class CollectionTest extends TestCase
 
         $this->assertCount(3, $collection->getItems());
         $items = $collection->getItems();
+        self::assertInstanceOf(\stdClass::class, $items[0]);
         $this->assertSame(1, $items[0]->id);
         $this->assertSame('User 1', $items[0]->name);
         $this->assertSame('user1@example.com', $items[0]->email);

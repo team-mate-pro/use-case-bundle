@@ -32,7 +32,7 @@ final class ResultResponseFactoryTest extends TestCase
         $res = $sut->createCsvResponse(result: $useCaseResult, base64: false);
 
         $this->assertSame('text/csv', $res->headers->all('content-type')[0] ?? null);
-        $this->assertStringContainsString('1;2;3', $res->getContent());
+        $this->assertStringContainsString('1;2;3', (string) $res->getContent());
     }
 
     public function testCreateBlobCsvResponseWithSerializationGroups(): void
@@ -50,6 +50,6 @@ final class ResultResponseFactoryTest extends TestCase
         $sut = new ResultResponseFactory($serializer);
         $res = $sut->createCsvResponse(result: $useCaseResult, base64: false, delimiter: ',', serializationGroups: [SerializationGroup::CSV]);
 
-        $this->assertStringContainsString(',name,2,', $res->getContent());
+        $this->assertStringContainsString(',name,2,', (string) $res->getContent());
     }
 }

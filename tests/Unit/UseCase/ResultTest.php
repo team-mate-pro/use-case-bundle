@@ -142,7 +142,6 @@ final class ResultTest extends TestCase
             ->withMeta('key', 'value')
             ->withErrorCode('CODE');
 
-        $this->assertInstanceOf(Result::class, $result);
         $this->assertSame('data', $result->getResult());
         $this->assertSame(['key' => 'value'], $result->getMeta());
         $this->assertSame('CODE', $result->getErrorCode());
@@ -152,8 +151,6 @@ final class ResultTest extends TestCase
     {
         // When data is set, Result wraps non-Traversable items in ArrayIterator
         $result = Result::create()->with('single');
-
-        $this->assertInstanceOf(\Traversable::class, $result->getIterator());
 
         $items = [];
         foreach ($result as $item) {
@@ -259,6 +256,7 @@ final class ResultTest extends TestCase
 
         $meta = $result->getMeta();
         $this->assertIsArray($meta['nested']);
+        self::assertIsArray($meta['nested']['level1']);
         $this->assertSame('value', $meta['nested']['level1']['level2']);
         $this->assertSame([1, 2, 3], $meta['array']);
         $this->assertInstanceOf(stdClass::class, $meta['object']);

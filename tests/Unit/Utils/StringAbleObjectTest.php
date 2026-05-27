@@ -96,9 +96,9 @@ final class StringAbleObjectTest extends TestCase
 
     public function testImplementsStringableInterface(): void
     {
-        $sut = new StringAbleObject('test');
+        $reflection = new \ReflectionClass(StringAbleObject::class);
 
-        $this->assertInstanceOf(\Stringable::class, $sut);
+        $this->assertTrue($reflection->implementsInterface(\Stringable::class));
     }
 
     public function testIsReadonly(): void

@@ -122,7 +122,7 @@ final class AbstractValidatedRequestExtraTest extends TestCase
     public function populateWithSerializerStrategyThrowsWithoutSerializer(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Serializer is required');
+        $this->expectExceptionMessage('A DenormalizerInterface is required for SERIALIZER_STRATEGY');
 
         new class (new FakeDependencies()) extends AbstractValidatedRequest {
             protected function getPopulateStrategy(): string

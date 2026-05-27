@@ -20,12 +20,17 @@ final readonly class ResultResponseFactory implements ResponseAsBlobCsvInterface
     {
     }
 
+    /**
+     * @template TResult
+     * @param Result<TResult> $result
+     * @param list<string>|string|null $serializationGroups
+     */
     public function createCsvResponse(Result $result, bool $base64 = true, string $delimiter = ';', array|string|null $serializationGroups = null): Response
     {
         $contextBuilder = (new ObjectNormalizerContextBuilder());
 
         if ($serializationGroups !== null) {
-            $contextBuilder->withGroups(is_string($serializationGroups) ? [$serializationGroups] : $serializationGroups);
+            $contextBuilder = $contextBuilder->withGroups($serializationGroups);
         }
 
         $contextBuilder = (new CsvEncoderContextBuilder())
@@ -59,7 +64,7 @@ final readonly class ResultResponseFactory implements ResponseAsBlobCsvInterface
         }
 
         return new Response(
-            content: $base64 ? base64_encode((string)$item) : $item,
+            content: $base64 ? base64_encode((string)$item) : (string)$item,
             status: 200,
             headers: [
                 'Content-Type' => $mime,

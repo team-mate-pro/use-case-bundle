@@ -9,5 +9,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 interface ResponseAsBlobCsvInterface
 {
+    /**
+     * @template TResult
+     * @param Result<TResult> $result
+     * @param list<string>|string|null $serializationGroups
+     */
     public function createCsvResponse(Result $result, bool $base64 = true, string $delimiter = ';', array|string|null $serializationGroups = null): Response;
 }

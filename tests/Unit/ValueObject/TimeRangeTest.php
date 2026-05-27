@@ -96,8 +96,6 @@ final class TimeRangeTest extends TestCase
     {
         $timeRange = TimeRange::currentYear();
 
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getStart());
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getEnd());
         $this->assertLessThan($timeRange->getEnd(), $timeRange->getStart());
     }
 
@@ -105,8 +103,6 @@ final class TimeRangeTest extends TestCase
     {
         $timeRange = TimeRange::previousYear();
 
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getStart());
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getEnd());
         $this->assertLessThan($timeRange->getEnd(), $timeRange->getStart());
     }
 
@@ -321,8 +317,6 @@ final class TimeRangeTest extends TestCase
     {
         $timeRange = TimeRange::quarter(1, 2024);
 
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getStart());
-        $this->assertInstanceOf(\DateTimeInterface::class, $timeRange->getEnd());
         $this->assertLessThan($timeRange->getEnd(), $timeRange->getStart());
     }
 

@@ -9,5 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 interface ResponseAsBlobInterface
 {
+    /**
+     * @template TResult
+     * @param Result<TResult> $result
+     */
     public function createBlobResponse(Result $result): Response;
 }
