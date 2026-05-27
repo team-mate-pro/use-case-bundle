@@ -7,9 +7,7 @@ namespace TeamMatePro\UseCaseBundle\Http\RestApi;
 use TeamMatePro\Contracts\Collection\PaginatedCollection;
 use TeamMatePro\Contracts\Collection\Result;
 
-use function get_class;
 use function is_array;
-use function is_object;
 
 final class ResultRestRenderer implements ResultRendererInterface
 {
@@ -45,6 +43,7 @@ final class ResultRestRenderer implements ResultRendererInterface
      */
     public function render(Result $result): array
     {
+        $data = $result->getResult();
         $metadata = $result->getMeta();
         $itemOrCollection = $result->getItemType();
 
@@ -53,26 +52,23 @@ final class ResultRestRenderer implements ResultRendererInterface
         // shape-based detection. Explicit `withCollection()` bypasses this branch entirely.
         if (
             $itemOrCollection === self::ITEM
-            && (is_array($result->getResult()) || $result->getResult() instanceof PaginatedCollection)
+            && (is_array($data) || $data instanceof PaginatedCollection)
         ) {
             $itemOrCollection = self::COLLECTION;
         }
 
-        if (is_object($result->getResult()) && !$result->getResult() instanceof PaginatedCollection) {
-            $metadata['type'] = get_class($result->getResult());
+        $dataType = $result->getDataType();
+        if ($dataType !== null) {
+            $metadata['type'] = $dataType['fqcn'];
         }
 
-        if (is_array($result->getResult()) && isset($result->getResult()[0]) && is_object($result->getResult()[0])) {
-            $metadata['type'] = get_class($result->getResult()[0]);
-        }
-
-        if ($result->getResult() instanceof PaginatedCollection) {
-            $metadata['count'] = $result->getResult()->getCount();
-            $metadata['limit'] = $result->getResult()->getPagination()->getLimit();
+        if ($data instanceof PaginatedCollection) {
+            $metadata['count'] = $data->getCount();
+            $metadata['limit'] = $data->getPagination()->getLimit();
         }
 
         return [
-            $itemOrCollection => $result->getResult(),
+            $itemOrCollection => $data,
             'message' => $result->getMessage(),
             'code' => $this->httpStatusCodeResolver->resolve($result->getType()),
             'errorCode' => $result->getErrorCode(),

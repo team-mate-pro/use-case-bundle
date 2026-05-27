@@ -11,6 +11,12 @@ Wersję uznajemy za wydaną dopiero w momencie jej wdrożenia na środowisko pro
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-05-27
+
+### Changed
+- `ResultRestRenderer::render()` deleguje rozpoznawanie typu wpisu w payloadzie do `Result::getDataType()` z contracts 1.5.0; usunięte własne wywołania `get_class()` na pojedynczym obiekcie oraz na pierwszym elemencie tablicy
+- Wymagana wersja `team-mate-pro/contracts` podniesiona do `^1.5.0` — udostępnia `Result::map()` oraz `Result::getDataType()`
+
 ## [2.3.0] - 2026-05-27
 
 ### Added
@@ -114,7 +120,8 @@ Pierwszy release linii 2.x — przebudowane fundamenty architekturalne:
 - Wzorzec UseCase z `__invoke()` (UCB-002), DTO jako interfejs (UCB-001), `securityCheck()` w Request (UCB-003), sufiks `Action` w kontrolerach (UCB-005)
 - Wymuszenie wersji `team-mate-pro/contracts` dla wspólnego `Result` i `ResultType`
 
-[Unreleased]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/compare/2.3.0...HEAD
+[Unreleased]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/compare/2.4.0...HEAD
+[2.4.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.4.0
 [2.3.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.3.0
 [2.2.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.2.0
 [2.1.1]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.1.1
