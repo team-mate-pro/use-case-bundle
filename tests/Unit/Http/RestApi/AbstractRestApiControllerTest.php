@@ -21,7 +21,7 @@ final class AbstractRestApiControllerTest extends TestCase
     {
         $controller = $this->createController();
 
-        $result = Result::create(ResultType::SUCCESS)->with(['data' => 'value']);
+        $result = Result::create(ResultType::SUCCESS)->withItem(['data' => 'value']);
         $response = $controller->response($result);
 
         self::assertSame(200, $response->getStatusCode());
@@ -33,7 +33,7 @@ final class AbstractRestApiControllerTest extends TestCase
     {
         $controller = $this->createController();
 
-        $result = Result::create(ResultType::SUCCESS_CREATED)->with(new \stdClass());
+        $result = Result::create(ResultType::SUCCESS_CREATED)->withItem(new \stdClass());
         $response = $controller->response($result, 'detail');
 
         self::assertSame(201, $response->getStatusCode());
@@ -44,7 +44,7 @@ final class AbstractRestApiControllerTest extends TestCase
     {
         $controller = $this->createController();
 
-        $result = Result::create()->with(null);
+        $result = Result::create();
         $response = $controller->response($result, ['list', 'detail']);
 
         self::assertSame(200, $response->getStatusCode());

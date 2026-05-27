@@ -26,7 +26,7 @@ final class ResultResponseFactoryBlobTest extends TestCase
         };
 
         /** @var Result<Stringable> $result */
-        $result = Result::create()->with($item);
+        $result = Result::create()->withItem($item);
         $serializer = new Serializer([], [new CsvEncoder()]);
         $factory = new ResultResponseFactory($serializer);
 
@@ -48,7 +48,7 @@ final class ResultResponseFactoryBlobTest extends TestCase
         };
 
         /** @var Result<Stringable> $result */
-        $result = Result::create()->with($item);
+        $result = Result::create()->withItem($item);
         $serializer = new Serializer([], [new CsvEncoder()]);
         $factory = new ResultResponseFactory($serializer);
 
@@ -62,7 +62,7 @@ final class ResultResponseFactoryBlobTest extends TestCase
     public function createBlobResponseThrowsForNonStringable(): void
     {
         /** @var Result<Stringable> $result */
-        $result = Result::create()->with(new \stdClass());
+        $result = Result::create()->withItem(new \stdClass());
         $serializer = new Serializer([], [new CsvEncoder()]);
         $factory = new ResultResponseFactory($serializer);
 
@@ -73,7 +73,7 @@ final class ResultResponseFactoryBlobTest extends TestCase
     #[Test]
     public function createCsvResponseWithBase64(): void
     {
-        $result = Result::create()->with([['a', 'b']]);
+        $result = Result::create()->withCollection([['a', 'b']]);
         $serializer = new Serializer([], [new CsvEncoder()]);
         $factory = new ResultResponseFactory($serializer);
 
@@ -86,7 +86,7 @@ final class ResultResponseFactoryBlobTest extends TestCase
     #[Test]
     public function createCsvResponseWithStringSerializationGroup(): void
     {
-        $result = Result::create()->with([['a', 'b']]);
+        $result = Result::create()->withCollection([['a', 'b']]);
         $serializer = new Serializer([], [new CsvEncoder()]);
         $factory = new ResultResponseFactory($serializer);
 

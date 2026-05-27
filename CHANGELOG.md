@@ -11,6 +11,12 @@ Wersję uznajemy za wydaną dopiero w momencie jej wdrożenia na środowisko pro
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-05-27
+
+### Changed (BREAKING)
+- Wymagana wersja `team-mate-pro/contracts` podniesiona do `^2.0.0` — w contracts 2.0.0 usunięty został `Result::with()`; wszystkie wywołania w testach (`tests/Unit/...`, `tests/_Data/MotherObject/ResultMother.php`) przepisane na `withItem()` / `withCollection()`; `ResultMother::successWithData()` i `::created()` mają teraz sygnaturę `array|object $data` (zamiast `mixed`)
+- Usunięte testy `with(scalar|null)` w `tests/Unit/UseCase/ResultTest.php` (`testResultIsIterableWithArrayIterator`, `testIterableWithSingleItem`, większość casów `hasContentProvider`) — payload `Result` zawsze musi być teraz `array|object`, więc te scenariusze przestały być reprezentatywne
+
 ## [2.4.0] - 2026-05-27
 
 ### Changed
@@ -120,7 +126,8 @@ Pierwszy release linii 2.x — przebudowane fundamenty architekturalne:
 - Wzorzec UseCase z `__invoke()` (UCB-002), DTO jako interfejs (UCB-001), `securityCheck()` w Request (UCB-003), sufiks `Action` w kontrolerach (UCB-005)
 - Wymuszenie wersji `team-mate-pro/contracts` dla wspólnego `Result` i `ResultType`
 
-[Unreleased]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/compare/2.4.0...HEAD
+[Unreleased]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/compare/3.0.0...HEAD
+[3.0.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/3.0.0
 [2.4.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.4.0
 [2.3.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.3.0
 [2.2.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.2.0

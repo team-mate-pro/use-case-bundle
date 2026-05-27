@@ -68,7 +68,7 @@ final class ResultRestRendererTest extends TestCase
 
     public function testHasItemWhenObjectPassed(): void
     {
-        $result = Result::create()->with(new stdClass());
+        $result = Result::create()->withItem(new stdClass());
 
         $sut = $this->sut->render($result);
 
@@ -77,7 +77,7 @@ final class ResultRestRendererTest extends TestCase
 
     public function testHasCollectionWhenCollectionPassed(): void
     {
-        $result = Result::create()->with(new PaginatedCollection([], 1, new Pagination(0, 5)));
+        $result = Result::create()->withItem(new PaginatedCollection([], 1, new Pagination(0, 5)));
 
         $sut = $this->sut->render($result);
 

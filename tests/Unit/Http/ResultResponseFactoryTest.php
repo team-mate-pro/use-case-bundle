@@ -19,7 +19,7 @@ final class ResultResponseFactoryTest extends TestCase
 {
     public function testCreateBlobCsvResponse(): void
     {
-        $useCaseResult = Result::create()->with([
+        $useCaseResult = Result::create()->withCollection([
             ['1', '2', '3', 'something_nested' => ['hih1', 'hih2']]
         ]);
 
@@ -40,7 +40,7 @@ final class ResultResponseFactoryTest extends TestCase
         $obj = new FakeObjectToPopulate();
         $obj->name = 'name';
         $obj->age = 2;
-        $useCaseResult = Result::create()->with([$obj]);
+        $useCaseResult = Result::create()->withCollection([$obj]);
 
         $serializer = new Serializer(
             normalizers: [new ObjectNormalizer()],

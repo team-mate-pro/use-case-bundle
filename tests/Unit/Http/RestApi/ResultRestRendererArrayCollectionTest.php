@@ -24,7 +24,7 @@ final class ResultRestRendererArrayCollectionTest extends TestCase
     public function renderWithArrayOfObjectsSetsTypeMetadata(): void
     {
         $obj = new stdClass();
-        $result = Result::create()->with([$obj]);
+        $result = Result::create()->withCollection([$obj]);
 
         $rendered = $this->sut->render($result);
 
@@ -36,7 +36,7 @@ final class ResultRestRendererArrayCollectionTest extends TestCase
     #[Test]
     public function renderWithPlainArrayCollection(): void
     {
-        $result = Result::create()->with(['a', 'b']);
+        $result = Result::create()->withCollection(['a', 'b']);
 
         $rendered = $this->sut->render($result);
 

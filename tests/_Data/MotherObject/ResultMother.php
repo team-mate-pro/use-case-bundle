@@ -15,9 +15,12 @@ final class ResultMother
         return Result::create(ResultType::SUCCESS, $message);
     }
 
-    public static function successWithData(mixed $data, ?string $message = null): Result
+    /**
+     * @param array<int|string, mixed>|object $data
+     */
+    public static function successWithData(array|object $data, ?string $message = null): Result
     {
-        return self::success($message)->with($data);
+        return self::success($message)->withItem($data);
     }
 
     public static function successWithMetadata(array $metadata): Result
@@ -44,9 +47,12 @@ final class ResultMother
         return Result::create(ResultType::NOT_FOUND, $message);
     }
 
-    public static function created(mixed $data, string $message = 'Resource created'): Result
+    /**
+     * @param array<int|string, mixed>|object $data
+     */
+    public static function created(array|object $data, string $message = 'Resource created'): Result
     {
-        return Result::create(ResultType::SUCCESS_CREATED, $message)->with($data);
+        return Result::create(ResultType::SUCCESS_CREATED, $message)->withItem($data);
     }
 
     public static function accepted(string $message = 'Request accepted'): Result

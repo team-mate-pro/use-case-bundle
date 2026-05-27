@@ -29,38 +29,23 @@ final class ResultTest extends TestCase
             false
         ];
 
-        yield 'has null' => [
-            Result::create(ResultType::SUCCESS)->with(null),
-            false
-        ];
-
-        yield 'has string content' => [
-            Result::create(ResultType::SUCCESS)->with('data'),
-            true
-        ];
-
         yield 'has object content' => [
-            Result::create(ResultType::SUCCESS)->with(new stdClass()),
+            Result::create(ResultType::SUCCESS)->withItem(new stdClass()),
             true
         ];
 
-        yield 'has array content' => [
-            Result::create(ResultType::SUCCESS)->with([1, 2, 3]),
+        yield 'has array item content' => [
+            Result::create(ResultType::SUCCESS)->withItem(['key' => 'value']),
             true
         ];
 
-        yield 'has zero as content' => [
-            Result::create(ResultType::SUCCESS)->with(0),
+        yield 'has array collection content' => [
+            Result::create(ResultType::SUCCESS)->withCollection([1, 2, 3]),
             true
         ];
 
-        yield 'has false as content' => [
-            Result::create(ResultType::SUCCESS)->with(false),
-            true
-        ];
-
-        yield 'has empty string as content' => [
-            Result::create(ResultType::SUCCESS)->with(''),
+        yield 'has empty array collection' => [
+            Result::create(ResultType::SUCCESS)->withCollection([]),
             true
         ];
     }
@@ -80,12 +65,22 @@ final class ResultTest extends TestCase
         $this->assertSame('Operation completed', $result->getMessage());
     }
 
-    public function testWithSetsData(): void
+    public function testWithItemSetsData(): void
     {
         $data = ['key' => 'value'];
-        $result = Result::create()->with($data);
+        $result = Result::create()->withItem($data);
 
         $this->assertSame($data, $result->getResult());
+        $this->assertSame('item', $result->getItemType());
+    }
+
+    public function testWithCollectionSetsData(): void
+    {
+        $data = [['a'], ['b']];
+        $result = Result::create()->withCollection($data);
+
+        $this->assertSame($data, $result->getResult());
+        $this->assertSame('collection', $result->getItemType());
     }
 
     public function testWithMetaAddsMetadata(): void
@@ -137,42 +132,21 @@ final class ResultTest extends TestCase
 
     public function testChainableInterface(): void
     {
+        $payload = ['key' => 'value'];
         $result = Result::create(ResultType::SUCCESS, 'Success')
-            ->with('data')
-            ->withMeta('key', 'value')
+            ->withItem($payload)
+            ->withMeta('m', 'v')
             ->withErrorCode('CODE');
 
-        $this->assertSame('data', $result->getResult());
-        $this->assertSame(['key' => 'value'], $result->getMeta());
+        $this->assertSame($payload, $result->getResult());
+        $this->assertSame(['m' => 'v'], $result->getMeta());
         $this->assertSame('CODE', $result->getErrorCode());
-    }
-
-    public function testResultIsIterableWithArrayIterator(): void
-    {
-        // When data is set, Result wraps non-Traversable items in ArrayIterator
-        $result = Result::create()->with('single');
-
-        $items = [];
-        foreach ($result as $item) {
-            $items[] = $item;
-        }
-
-        $this->assertSame(['single'], $items);
-    }
-
-    public function testIterableWithSingleItem(): void
-    {
-        $result = Result::create()->with('single');
-
-        $items = iterator_to_array($result);
-
-        $this->assertSame(['single'], $items);
     }
 
     public function testIterableWithObject(): void
     {
         $obj = new stdClass();
-        $result = Result::create()->with($obj);
+        $result = Result::create()->withItem($obj);
 
         $items = iterator_to_array($result);
 
