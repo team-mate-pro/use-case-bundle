@@ -4,10 +4,10 @@ services:
     autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
   TeamMatePro\UseCaseBundle\:
-    resource: '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/'
+    resource: '../src/'
     exclude:
-      - '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/Repository/'
-      - '%kernel.project_dir%/vendor/team-mate-pro/use-case-bundle/src/UseCase/'
+      - '../src/Repository/'
+      - '../src/UseCase/'
 
   TeamMatePro\UseCaseBundle\Http\RequestDependencies:
     arguments:
@@ -30,3 +30,12 @@ services:
 
   TeamMatePro\UseCaseBundle\Http\ResponseAsBlobCsvInterface:
     class: TeamMatePro\UseCaseBundle\Http\ResultResponseFactory
+
+  # Interface aliases — Symfony nie tworzy ich automatycznie nawet przy jednej implementacji,
+  # a #[Required] setter w AbstractRestApiController oraz konstruktory listenerów wymagają,
+  # by te typy były bindowalne tuż po zainstalowaniu bundla, bez dodatkowej konfiguracji.
+  TeamMatePro\UseCaseBundle\Http\RestApi\ResultRendererInterface:
+    alias: TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer
+
+  TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolverInterface:
+    alias: TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver

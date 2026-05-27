@@ -11,6 +11,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 use TeamMatePro\Contracts\Collection\Result;
 use TeamMatePro\Contracts\Collection\ResultType;
 use TeamMatePro\UseCaseBundle\Http\RestApi\AbstractRestApiController;
+use TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver;
+use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
 
 final class AbstractRestApiControllerTest extends TestCase
 {
@@ -117,6 +119,10 @@ final class AbstractRestApiControllerTest extends TestCase
         $controller = new class extends AbstractRestApiController {
         };
         $controller->setContainer($container);
+
+        $resolver = new HttpStatusCodeResolver();
+        $controller->setHttpStatusCodeResolver($resolver);
+        $controller->setResultRenderer(new ResultRestRenderer($resolver));
 
         return $controller;
     }

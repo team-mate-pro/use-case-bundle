@@ -8,7 +8,9 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use TeamMatePro\TestsBundle\TeamMateProTestsBundle;
+use TeamMatePro\UseCaseBundle\TeamMateProUseCaseBundle;
 
 final class Kernel extends BaseKernel
 {
@@ -18,7 +20,9 @@ final class Kernel extends BaseKernel
     {
         return [
             new FrameworkBundle(),
+            new SecurityBundle(),
             new TeamMateProTestsBundle(),
+            new TeamMateProUseCaseBundle(),
         ];
     }
 
@@ -27,6 +31,15 @@ final class Kernel extends BaseKernel
         $container->extension('framework', [
             'test' => true,
             'secret' => 'test',
+        ]);
+
+        $container->extension('security', [
+            'providers' => [
+                'in_memory' => ['memory' => null],
+            ],
+            'firewalls' => [
+                'main' => ['security' => false],
+            ],
         ]);
     }
 }

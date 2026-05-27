@@ -7,8 +7,11 @@ namespace TeamMatePro\UseCaseBundle\Tests\Unit\Http\EventListener;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use TeamMatePro\UseCaseBundle\Http\EventListener\ValidationExceptionListener;
+use TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver;
+use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -22,7 +25,9 @@ final class ValidationExceptionListenerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->listener = new ValidationExceptionListener();
+        $this->listener = new ValidationExceptionListener(
+            new ResultRestRenderer(new HttpStatusCodeResolver())
+        );
     }
 
     public function testHandlesValidationFailedException(): void
@@ -47,11 +52,13 @@ final class ValidationExceptionListenerTest extends TestCase
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(422, $response->getStatusCode());
 
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
         $this->assertSame('validation_failed', $content['message']);
         $this->assertSame(422, $content['code']);
         $this->assertArrayHasKey('errors', $content);
+        self::assertIsArray($content['errors']);
         $this->assertCount(1, $content['errors']);
+        self::assertIsArray($content['errors'][0]);
         $this->assertSame('name', $content['errors'][0]['property']);
         $this->assertSame('invalid-value', $content['errors'][0]['value']);
         $this->assertSame('Name is required', $content['errors'][0]['message']);
@@ -92,9 +99,13 @@ final class ValidationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
 
+        self::assertIsArray($content['errors']);
         $this->assertCount(3, $content['errors']);
+        self::assertIsArray($content['errors'][0]);
+        self::assertIsArray($content['errors'][1]);
+        self::assertIsArray($content['errors'][2]);
         $this->assertSame('name', $content['errors'][0]['property']);
         $this->assertSame('email', $content['errors'][1]['property']);
         $this->assertSame('age', $content['errors'][2]['property']);
@@ -121,8 +132,9 @@ final class ValidationExceptionListenerTest extends TestCase
         $response = $event->getResponse();
         $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
         $this->assertArrayHasKey('errors', $content);
+        self::assertIsArray($content['errors']);
         $this->assertCount(0, $content['errors']);
     }
 
@@ -138,7 +150,7 @@ final class ValidationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
 
         $this->assertArrayHasKey('message', $content);
         $this->assertArrayHasKey('code', $content);
@@ -164,9 +176,25 @@ final class ValidationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
 
+        self::assertIsArray($content['errors']);
+        self::assertIsArray($content['errors'][0]);
         $this->assertSame('user.address.street', $content['errors'][0]['property']);
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function decodeJsonResponse(?Response $response): array
+    {
+        self::assertNotNull($response);
+        $body = $response->getContent();
+        self::assertIsString($body);
+        $decoded = json_decode($body, true);
+        self::assertIsArray($decoded);
+
+        return $decoded;
     }
 
     private function createExceptionEvent(\Throwable $exception): ExceptionEvent

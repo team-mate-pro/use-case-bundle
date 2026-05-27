@@ -8,17 +8,25 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use TeamMatePro\Contracts\Collection\Result;
+use TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver;
 use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
 
 final class ResultRestRendererArrayCollectionTest extends TestCase
 {
+    private ResultRestRenderer $sut;
+
+    protected function setUp(): void
+    {
+        $this->sut = new ResultRestRenderer(new HttpStatusCodeResolver());
+    }
+
     #[Test]
     public function renderWithArrayOfObjectsSetsTypeMetadata(): void
     {
         $obj = new stdClass();
         $result = Result::create()->with([$obj]);
 
-        $rendered = ResultRestRenderer::render($result);
+        $rendered = $this->sut->render($result);
 
         self::assertArrayHasKey('collection', $rendered);
         /** @var array{metadata: array{type: string}} $rendered */
@@ -30,7 +38,7 @@ final class ResultRestRendererArrayCollectionTest extends TestCase
     {
         $result = Result::create()->with(['a', 'b']);
 
-        $rendered = ResultRestRenderer::render($result);
+        $rendered = $this->sut->render($result);
 
         self::assertArrayHasKey('collection', $rendered);
     }
@@ -38,7 +46,7 @@ final class ResultRestRendererArrayCollectionTest extends TestCase
     #[Test]
     public function renderMandatoryWithCustomValues(): void
     {
-        $rendered = ResultRestRenderer::renderMandatory(
+        $rendered = $this->sut->renderMandatory(
             message: 'Error',
             code: 400,
             errorCode: 'VALIDATION_FAILED',

@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace TeamMatePro\UseCaseBundle\Http\EventListener;
 
 use TeamMatePro\UseCaseBundle\Http\HttpUtils;
-use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
+use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRendererInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 final class AuthorizationExceptionListener
 {
+    public function __construct(
+        private readonly ResultRendererInterface $resultRenderer,
+    ) {
+    }
+
     public function onKernelException(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
@@ -20,10 +25,9 @@ final class AuthorizationExceptionListener
             return;
         }
 
-        // Check if the exception is a ValidationFailedException
         if ($exception instanceof AccessDeniedException) {
             $response = new JsonResponse(
-                ResultRestRenderer::renderMandatory(
+                $this->resultRenderer->renderMandatory(
                     message: $exception->getMessage(),
                     code: $exception->getCode(),
                 ),

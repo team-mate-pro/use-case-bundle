@@ -6,6 +6,7 @@ namespace TeamMatePro\UseCaseBundle\Http\RestApi;
 
 use TeamMatePro\Contracts\Collection\Result;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 use function array_merge;
@@ -14,6 +15,27 @@ use function sprintf;
 
 abstract class AbstractRestApiController extends AbstractController
 {
+    private ResultRendererInterface $resultRenderer;
+    private HttpStatusCodeResolverInterface $httpStatusCodeResolver;
+
+    #[Required]
+    public function setResultRenderer(ResultRendererInterface $resultRenderer): void
+    {
+        $this->resultRenderer = $resultRenderer;
+    }
+
+    #[Required]
+    public function setHttpStatusCodeResolver(HttpStatusCodeResolverInterface $httpStatusCodeResolver): void
+    {
+        $this->httpStatusCodeResolver = $httpStatusCodeResolver;
+    }
+
+    /**
+     * @template TResult
+     * @param Result<TResult> $result
+     * @param list<string>|string|null $serializationGroups
+     * @param array<string, string|string[]> $headers
+     */
     public function response(
         Result $result,
         array|string|null $serializationGroups = null,
@@ -24,16 +46,19 @@ abstract class AbstractRestApiController extends AbstractController
         ) ? ['groups' => [$serializationGroups]] : ['groups' => $serializationGroups];
 
         return $this->json(
-            data: ResultRestRenderer::render($result),
-            status: ResultRestRenderer::getHttpStatusCode($result->getType()),
+            data: $this->resultRenderer->render($result),
+            status: $this->httpStatusCodeResolver->resolve($result->getType()),
             headers: $headers,
             context: $context,
         );
     }
 
     /**
-     * @param string[]|string|null $serializationGroups
-     * @param int[]|int|null $cacheInSeconds - if array passed, second param will cache in the browser
+     * @template TResult
+     * @param Result<TResult> $result
+     * @param int|array{0?: int, 1?: int}|null $cacheInSeconds - if array passed, second param will cache in the browser
+     * @param list<string>|string|null $serializationGroups
+     * @param array<string, string|string[]> $headers
      */
     public function responseWithCache(
         Result $result,

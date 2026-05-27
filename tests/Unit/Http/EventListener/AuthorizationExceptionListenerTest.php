@@ -7,8 +7,11 @@ namespace TeamMatePro\UseCaseBundle\Tests\Unit\Http\EventListener;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use TeamMatePro\UseCaseBundle\Http\EventListener\AuthorizationExceptionListener;
+use TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver;
+use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -20,7 +23,9 @@ final class AuthorizationExceptionListenerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->listener = new AuthorizationExceptionListener();
+        $this->listener = new AuthorizationExceptionListener(
+            new ResultRestRenderer(new HttpStatusCodeResolver())
+        );
     }
 
     public function testHandlesAccessDeniedExceptionForJsonRequests(): void
@@ -33,7 +38,7 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $response = $event->getResponse();
         $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
         $this->assertSame('Access denied', $content['message']);
     }
 
@@ -45,11 +50,10 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-
-        // AccessDeniedException returns 403 by default in Symfony
+        self::assertNotNull($response);
         $this->assertSame(403, $response->getStatusCode());
 
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
         $this->assertSame(403, $content['code']);
     }
 
@@ -81,7 +85,7 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
 
         $this->assertArrayHasKey('message', $content);
         $this->assertArrayHasKey('code', $content);
@@ -96,8 +100,7 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-
-        // AccessDeniedException default code is 403 in Symfony
+        self::assertNotNull($response);
         $this->assertSame(403, $response->getStatusCode());
     }
 
@@ -109,7 +112,7 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $response = $event->getResponse();
-        $content = json_decode($response->getContent(), true);
+        $content = $this->decodeJsonResponse($response);
 
         $this->assertSame('You do not have permission to access this resource', $content['message']);
     }
@@ -150,6 +153,20 @@ final class AuthorizationExceptionListenerTest extends TestCase
         $this->listener->onKernelException($event);
 
         $this->assertNull($event->getResponse());
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function decodeJsonResponse(?Response $response): array
+    {
+        self::assertNotNull($response);
+        $body = $response->getContent();
+        self::assertIsString($body);
+        $decoded = json_decode($body, true);
+        self::assertIsArray($decoded);
+
+        return $decoded;
     }
 
     private function createJsonExceptionEvent(\Throwable $exception): ExceptionEvent

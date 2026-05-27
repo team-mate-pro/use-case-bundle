@@ -46,7 +46,7 @@
     ],
     "scripts": {
         "phpunit": "APP_ENV=test ./vendor/bin/phpunit tests --testdox --colors=always",
-        "tests:unit": "APP_ENV=test php bin/console tmp:tests --suite unit --no-warmup --coverage 100",
+        "tests:unit": "APP_ENV=test php bin/console tmp:tests --suite unit --suite integration --no-warmup --coverage 100",
         "phpstan": "php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G --generate-baseline",
         "phpcs": "@phpcs:check",

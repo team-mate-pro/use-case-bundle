@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TeamMatePro\UseCaseBundle\Http\EventListener;
 
-use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
+use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRendererInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
@@ -14,18 +14,18 @@ use function iterator_to_array;
 
 final class ValidationExceptionListener
 {
+    public function __construct(
+        private readonly ResultRendererInterface $resultRenderer,
+    ) {
+    }
+
     public function onKernelException(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
 
-//        if (!HttpUtils::isJson($event->getRequest())) {
-//            return;
-//        }
-
-        // Check if the exception is a ValidationFailedException
         if ($exception instanceof ValidationFailedException) {
             $response = new JsonResponse(
-                ResultRestRenderer::renderMandatory(
+                $this->resultRenderer->renderMandatory(
                     message: 'validation_failed',
                     code: 422,
                     extra: [
