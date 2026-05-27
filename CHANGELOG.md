@@ -1,0 +1,132 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## Polityka wersjonowania
+
+Wersję uznajemy za wydaną dopiero w momencie jej wdrożenia na środowisko produkcyjne. Do tego czasu zmiany gromadzą się w sekcji Unreleased i po deployu na prod trafiają do jednej wspólnej wersji, której zostaje przypisany numer (MAJOR/MINOR/PATCH wg SemVer) oraz data deployu. Tag gitowy (git tag -a X.Y.Z) ustawiamy na commicie, który faktycznie trafił na prod — nie na branch dev/stage.
+
+## [Unreleased]
+
+## [2.3.0] - 2026-05-27
+
+### Added
+- `ResultRendererInterface` (`src/Http/RestApi/`) — kontrakt renderowania `Result` do tablicy JSON oraz minimalnej obwiedni odpowiedzi (`renderMandatory()` dla exception listenerów); implementacja: `ResultRestRenderer`
+- `HttpStatusCodeResolverInterface` + `HttpStatusCodeResolver` (`src/Http/RestApi/`) — kontrakt i implementacja mapowania `ResultType` na kod HTTP, wyciągnięte z `ResultRestRenderer`
+
+### Changed
+- `AbstractRestApiController` korzysta z dwóch wstrzykiwanych serwisów (`ResultRendererInterface`, `HttpStatusCodeResolverInterface`) zamiast wywołań statycznych — iniekcja przez `#[Required]` setter (idiom Symfony dla abstract controllers); klasy nadrzędne dostają serwisy automatycznie z DI, bez modyfikacji konstruktorów
+- `ResultRestRenderer` z metodami statycznymi na klasę instancyjną; zależność `HttpStatusCodeResolverInterface` wstrzyknięta przez konstruktor
+- `ResultRestRenderer::render()` czyta klucz `item`/`collection` z `Result::getItemType()` (nowe API contracts 1.4.0); fallback na detekcję na podstawie kształtu danych dla legacy `Result::with()`
+- `AuthorizationExceptionListener` i `ValidationExceptionListener` przyjmują `ResultRendererInterface` przez konstruktor (wcześniej statyczne `ResultRestRenderer::renderMandatory()`)
+- Wymagana wersja `team-mate-pro/contracts` podniesiona do `^1.4.0` — udostępnia nowe API `Result::withItem()` / `Result::withCollection()` / `Result::getItemType()` rozróżniające payload pojedynczy od kolekcji oraz oznacza `Result::with()` jako `@deprecated`
+- Usunięty `phpstan-baseline.neon` — wszystkie błędy PHPStan na poziomie `max` poprawione bez supresji
+
+### Removed (BREAKING)
+- `ResultRestRenderer::render()` / `getHttpStatusCode()` / `renderMandatory()` jako wywołania statyczne — należy korzystać z serwisów `ResultRendererInterface` i `HttpStatusCodeResolverInterface` (autowire z DI lub ręczne instancjonowanie)
+
+## [2.2.0] - 2026-04-21
+
+### Added
+- Licencja MIT w metadanych pakietu
+
+## [2.1.1] - 2026-03-26
+
+### Changed
+- Pełne pokrycie testami jednostkowymi (`tests/Unit/`) — 165 testów, 297 asercji
+- Podział pipeline CI/CD na osobne joby (statyczna analiza vs. publikacja)
+- `phpstan` w shared library static analysis template z `sh/tmp-infra`
+
+### Fixed
+- Niepoprawna nazwa komendy `phpcs` w `docker-compose`
+
+## [2.1.0] - 2026-03-24
+
+### Added
+- Rozszerzone `ResultType`'y dla pełnego pokrycia kodów statusu HTTP (2xx/4xx/5xx)
+- Zgodność z TMP Standards (UCB-001..UCB-005) — udokumentowane reguły architektoniczne use case pattern
+- Modernizacja pipeline CI/CD
+
+## [2.0.11] - 2026-02-24
+
+### Fixed
+- Niepoprawna nazwa klasy w jednym z eksportowanych typów
+
+## [2.0.9] - 2026-02-24
+
+### Added
+- Content negotiation (`ContentTypeChecker`) — rozpoznawanie nagłówka `Accept` dla CSV/PDF i odpowiadające `ResultResponseFactory` budujące właściwy `JsonResponse`/blob
+
+## [2.0.8] - 2025-12-01
+
+### Fixed
+- Upload plików z formularzy `multipart/form-data` w `AbstractValidatedRequest`
+
+## [2.0.7] - 2025-11-28
+
+### Changed
+- `PartialUpdateService` — pomijanie wartości `Undefined` (sentinel z `team-mate-pro/contracts`) przy mapowaniu DTO → encja, zamiast nadpisywania ich `null`em
+
+## [2.0.6] - 2025-11-28
+
+### Changed
+- Normalizacja DTO — priorytet getterów nad bezpośrednim odczytem pól (spójne z DTO interface-driven)
+
+## [2.0.5] - 2025-11-27
+
+### Added
+- `AbstractValidatedRequest` jako abstrakcja DTO walidowanego — auto-populacja (JSON body, query, route attrs, multipart), `securityCheck()` przed walidacją, auto-injection `userId`, helper `getValue()` z auto-kastowaniem
+
+## [2.0.4] - 2025-11-20
+
+### Added
+- Helpery paginacyjne dla `Result` i kolekcji
+- Auto-kastowanie typów prostych (`string`↔`int`↔`float`↔`bool`) w `getValue()`
+
+## [2.0.3] - 2025-11-20
+
+### Added
+- Auto-discovery typu Request — Symfony rozpoznaje konkretną klasę po sygnaturze akcji kontrolera
+
+### Fixed
+- Stabilizacja testów
+
+## [2.0.2] - 2025-11-07
+
+### Added
+- `PatchValidation` — constraint walidujący tylko gdy wartość nie jest `Undefined` (PATCH-style partial updates)
+
+## [2.0.1] - 2025-11-07
+
+### Added
+- Interfejsy `CollectionAware` / `ItemAware` rozróżniające payload pojedynczy od kolekcji
+
+## [2.0.0] - 2025-11-07
+
+Pierwszy release linii 2.x — przebudowane fundamenty architekturalne:
+
+### Added
+- `AbstractRestApiController` z metodami `response()` / `responseWithCache()` (UCB-004)
+- `ResultRestRenderer` mapujący `ResultType` → kody HTTP
+- Wzorzec UseCase z `__invoke()` (UCB-002), DTO jako interfejs (UCB-001), `securityCheck()` w Request (UCB-003), sufiks `Action` w kontrolerach (UCB-005)
+- Wymuszenie wersji `team-mate-pro/contracts` dla wspólnego `Result` i `ResultType`
+
+[Unreleased]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/compare/2.3.0...HEAD
+[2.3.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.3.0
+[2.2.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.2.0
+[2.1.1]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.1.1
+[2.1.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.1.0
+[2.0.11]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.11
+[2.0.9]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.9
+[2.0.8]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.8
+[2.0.7]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.7
+[2.0.6]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.6
+[2.0.5]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.5
+[2.0.4]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.4
+[2.0.3]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.3
+[2.0.2]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.2
+[2.0.1]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.1
+[2.0.0]: https://gitlab.team-mate.pl/sh/use-case-bundle/-/tags/2.0.0
