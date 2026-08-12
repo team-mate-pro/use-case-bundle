@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 interface ResponseAsBlobCsvInterface
 {
     /**
-     * @template TResult
+     * @template TResult of array<int|string, mixed>|object
      * @param Result<TResult> $result
      * @param list<string>|string|null $serializationGroups
      */

@@ -686,8 +686,8 @@ class CreateUserUseCaseTest extends TestCase
 
 ## Requirements
 
-- PHP >= 8.3
-- Symfony >= 7.0
+- PHP >= 8.3 (tested on 8.3, 8.4 and 8.5)
+- Symfony ^7.4
 - Docker (for development)
 
 ## Configuration

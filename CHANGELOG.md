@@ -11,6 +11,26 @@ Wersję uznajemy za wydaną dopiero w momencie jej wdrożenia na środowisko pro
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-11
+
+### Changed (BREAKING)
+
+- Zależności Symfony zawężone z `>=7.0` do `^7.4`. Powód nie jest kosmetyczny: linie 7.1, 7.2 i 7.3 mają aktywne security advisories na `symfony/yaml` (`PKSA-v5yj-8nmz-sk2q`, `PKSA-ft77-7h5f-p3r6`, `PKSA-b14r-zh1d-vdrc`) i Composer odmawia ich instalacji. Dotychczasowe `>=7.0` dopuszczało dodatkowo nieprzetestowaną linię Symfony 8.x
+- `team-mate-pro/contracts`: `^2.0.0` → `^3.0.0`
+- `team-mate-pro/tests-bundle` w `require-dev`: `^1.22` → `^2.0`
+
+`php` pozostaje na `>=8.3` — bundle jest testowany na 8.3, 8.4 i 8.5.
+- `@template TResult` w `AbstractRestApiController`, `ResultRendererInterface`, `ResultRestRenderer`, `ResultResponseFactory`, `ResponseAsBlobInterface` i `ResponseAsBlobCsvInterface` ograniczone do `array<int|string, mixed>|object` — wynika z zawężenia generyka `Result<T>` w contracts 3.0.0. Kod przekazujący `Result` bez adnotacji generycznych nie wymaga zmian
+
+### Fixed
+
+- `ResultResponseFactory::createBlobResponse()` deklarował `Result<Stringable>`, mimo że `ResponseAsBlobInterface` przyjmuje dowolny `Result` — niezgodność wariancji, której PHPStan 1.x nie wykrywał. Sygnatura zgodna z interfejsem; sprawdzenie `instanceof Stringable` w ciele metody bez zmian
+
+### Changed
+
+- Środowisko deweloperskie i CI przeniesione na PHP 8.5 (`docker/app/Dockerfile`); PHPUnit `^10.0` → `^11.5`, paratest `^7.0` → `^7.8`, PHPStan 1.x → 2.x
+- `BundleWiringTest` dziedziczy po `TeamMatePro\TestsBundle\AbstractKernelTestCase` — przywraca handlery błędów po bootowaniu kernela, przez co PHPUnit 11 nie oznacza testów jako risky
+
 ## [3.0.0] - 2026-05-27
 
 ### Changed (BREAKING)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TeamMatePro\UseCaseBundle\Tests\Integration;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use TeamMatePro\TestsBundle\AbstractKernelTestCase;
 use TeamMatePro\UseCaseBundle\Http\EventListener\AuthorizationExceptionListener;
 use TeamMatePro\UseCaseBundle\Http\EventListener\ValidationExceptionListener;
 use TeamMatePro\UseCaseBundle\Http\RestApi\HttpStatusCodeResolver;
@@ -17,7 +17,7 @@ use TeamMatePro\UseCaseBundle\Http\RestApi\ResultRestRenderer;
  * zero wiring after install: registering the bundle in bundles.php must be enough
  * for every public abstraction to be autowireable.
  */
-final class BundleWiringTest extends KernelTestCase
+final class BundleWiringTest extends AbstractKernelTestCase
 {
     public function testResultRendererInterfaceIsAliasedToResultRestRenderer(): void
     {

@@ -37,7 +37,7 @@ final class ResultRestRenderer implements ResultRendererInterface
     }
 
     /**
-     * @template TResult
+     * @template TResult of array<int|string, mixed>|object
      * @param Result<TResult> $result
      * @return array<string, mixed>
      */

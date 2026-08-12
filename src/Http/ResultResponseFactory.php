@@ -21,7 +21,7 @@ final readonly class ResultResponseFactory implements ResponseAsBlobCsvInterface
     }
 
     /**
-     * @template TResult
+     * @template TResult of array<int|string, mixed>|object
      * @param Result<TResult> $result
      * @param list<string>|string|null $serializationGroups
      */
@@ -53,7 +53,11 @@ final readonly class ResultResponseFactory implements ResponseAsBlobCsvInterface
     }
 
     /**
-     * @param Result<Stringable> $result
+     * Accepts any Result to stay compatible with ResponseAsBlobInterface; the payload is
+     * checked at runtime and must be Stringable.
+     *
+     * @template TResult of array<int|string, mixed>|object
+     * @param Result<TResult> $result
      */
     public function createBlobResponse(Result $result, bool $base64 = true, string $mime = 'application/octet-stream'): Response
     {

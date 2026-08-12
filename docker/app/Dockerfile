@@ -1,4 +1,4 @@
-FROM php:8.3-cli-alpine AS base
+FROM php:8.5-cli-alpine AS base
 
 RUN apk --update add --no-cache \
     libpng \

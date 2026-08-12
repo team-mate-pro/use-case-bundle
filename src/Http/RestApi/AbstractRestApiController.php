@@ -31,7 +31,7 @@ abstract class AbstractRestApiController extends AbstractController
     }
 
     /**
-     * @template TResult
+     * @template TResult of array<int|string, mixed>|object
      * @param Result<TResult> $result
      * @param list<string>|string|null $serializationGroups
      * @param array<string, string|string[]> $headers
@@ -54,7 +54,7 @@ abstract class AbstractRestApiController extends AbstractController
     }
 
     /**
-     * @template TResult
+     * @template TResult of array<int|string, mixed>|object
      * @param Result<TResult> $result
      * @param int|array{0?: int, 1?: int}|null $cacheInSeconds - if array passed, second param will cache in the browser
      * @param list<string>|string|null $serializationGroups
